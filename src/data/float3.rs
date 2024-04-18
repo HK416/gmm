@@ -1,6 +1,9 @@
 use core::fmt;
 use core::f32;
 
+use super::float2::Float2;
+use super::float4::Float4;
+
 /// A structure that stores three-dimensional vector data.
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq)]
@@ -65,6 +68,589 @@ impl Float3 {
     #[inline(always)]
     pub const fn fill(val: f32) -> Self {
         Self { x: val, y: val, z: val }
+    }
+}
+
+// Vector swizzle code implementation.
+impl Float3 {
+    #[inline]
+    pub const fn xx(self) -> Float2 {
+        Float2 { x: self.x, y: self.x }
+    }
+
+    #[inline]
+    pub const fn xy(self) -> Float2 {
+        Float2 { x: self.x, y: self.y }
+    }
+
+    #[inline]
+    pub const fn xz(self) -> Float2 {
+        Float2 { x: self.x, y: self.z }
+    }
+
+    #[inline]
+    pub const fn yx(self) -> Float2 {
+        Float2 { x: self.y, y: self.x }
+    }
+
+    #[inline]
+    pub const fn yy(self) -> Float2 {
+        Float2 { x: self.y, y: self.y }
+    }
+
+    #[inline]
+    pub const fn yz(self) -> Float2 {
+        Float2 { x: self.y, y: self.z }
+    }
+
+    #[inline]
+    pub const fn zx(self) -> Float2 {
+        Float2 { x: self.z, y: self.x }
+    }
+
+    #[inline]
+    pub const fn zy(self) -> Float2 {
+        Float2 { x: self.z, y: self.y }
+    }
+
+    #[inline]
+    pub const fn zz(self) -> Float2 {
+        Float2 { x: self.z, y: self.z }
+    }
+
+    #[inline]
+    pub const fn xxx(self) -> Float3 {
+        Float3 { x: self.x, y: self.x, z: self.x }
+    }
+
+    #[inline]
+    pub const fn xxy(self) -> Float3 {
+        Float3 { x: self.x, y: self.x, z: self.y }
+    }
+
+    #[inline]
+    pub const fn xxz(self) -> Float3 {
+        Float3 { x: self.x, y: self.x, z: self.z }
+    }
+
+    #[inline]
+    pub const fn xyx(self) -> Float3 {
+        Float3 { x: self.x, y: self.y, z: self.x }
+    }
+
+    #[inline]
+    pub const fn xyy(self) -> Float3 {
+        Float3 { x: self.x, y: self.y, z: self.y }
+    }
+
+    #[inline]
+    pub const fn xyz(self) -> Float3 {
+        Float3 { x: self.x, y: self.y, z: self.z }
+    }
+
+    #[inline]
+    pub const fn xzx(self) -> Float3 {
+        Float3 { x: self.x, y: self.z, z: self.x }
+    }
+
+    #[inline]
+    pub const fn xzy(self) -> Float3 {
+        Float3 { x: self.x, y: self.z, z: self.y }
+    }
+
+    #[inline]
+    pub const fn xzz(self) -> Float3 {
+        Float3 { x: self.x, y: self.z, z: self.z }
+    }
+
+    #[inline]
+    pub const fn yxx(self) -> Float3 {
+        Float3 { x: self.y, y: self.x, z: self.x }
+    }
+
+    #[inline]
+    pub const fn yxy(self) -> Float3 {
+        Float3 { x: self.y, y: self.x, z: self.y }
+    }
+
+    #[inline]
+    pub const fn yxz(self) -> Float3 {
+        Float3 { x: self.y, y: self.x, z: self.z }
+    }
+
+    #[inline]
+    pub const fn yyx(self) -> Float3 {
+        Float3 { x: self.y, y: self.y, z: self.x }
+    }
+
+    #[inline]
+    pub const fn yyy(self) -> Float3 {
+        Float3 { x: self.y, y: self.y, z: self.y }
+    }
+
+    #[inline]
+    pub const fn yyz(self) -> Float3 {
+        Float3 { x: self.y, y: self.y, z: self.z }
+    }
+
+    #[inline]
+    pub const fn yzx(self) -> Float3 {
+        Float3 { x: self.y, y: self.z, z: self.x }
+    }
+
+    #[inline]
+    pub const fn yzy(self) -> Float3 {
+        Float3 { x: self.y, y: self.z, z: self.y }
+    }
+
+    #[inline]
+    pub const fn yzz(self) -> Float3 {
+        Float3 { x: self.y, y: self.z, z: self.z }
+    }
+
+    #[inline]
+    pub const fn zxx(self) -> Float3 {
+        Float3 { x: self.z, y: self.x, z: self.x }
+    }
+
+    #[inline]
+    pub const fn zxy(self) -> Float3 {
+        Float3 { x: self.z, y: self.x, z: self.y }
+    }
+
+    #[inline]
+    pub const fn zxz(self) -> Float3 {
+        Float3 { x: self.z, y: self.x, z: self.z }
+    }
+
+    #[inline]
+    pub const fn zyx(self) -> Float3 {
+        Float3 { x: self.z, y: self.y, z: self.x }
+    }
+
+    #[inline]
+    pub const fn zyy(self) -> Float3 {
+        Float3 { x: self.z, y: self.y, z: self.y }
+    }
+
+    #[inline]
+    pub const fn zyz(self) -> Float3 {
+        Float3 { x: self.z, y: self.y, z: self.z }
+    }
+
+    #[inline]
+    pub const fn zzx(self) -> Float3 {
+        Float3 { x: self.z, y: self.z, z: self.x }
+    }
+
+    #[inline]
+    pub const fn zzy(self) -> Float3 {
+        Float3 { x: self.z, y: self.z, z: self.y }
+    }
+
+    #[inline]
+    pub const fn zzz(self) -> Float3 {
+        Float3 { x: self.z, y: self.z, z: self.z }
+    }
+
+    #[inline]
+    pub const fn xxxx(self) -> Float4 {
+        Float4 { x: self.x, y: self.x, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xxxy(self) -> Float4 {
+        Float4 { x: self.x, y: self.x, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xxxz(self) -> Float4 {
+        Float4 { x: self.x, y: self.x, z: self.x, w: self.z }
+    }
+
+    #[inline]
+    pub const fn xxyx(self) -> Float4 {
+        Float4 { x: self.x, y: self.x, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xxyy(self) -> Float4 {
+        Float4 { x: self.x, y: self.x, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xxyz(self) -> Float4 {
+        Float4 { x: self.x, y: self.x, z: self.y, w: self.z }
+    }
+
+    #[inline]
+    pub const fn xxzx(self) -> Float4 {
+        Float4 { x: self.x, y: self.x, z: self.z, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xxzy(self) -> Float4 {
+        Float4 { x: self.x, y: self.x, z: self.z, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xxzz(self) -> Float4 {
+        Float4 { x: self.x, y: self.x, z: self.z, w: self.z }
+    }
+    
+    #[inline]
+    pub const fn xyxx(self) -> Float4 {
+        Float4 { x: self.x, y: self.y, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xyxy(self) -> Float4 {
+        Float4 { x: self.x, y: self.y, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xyxz(self) -> Float4 {
+        Float4 { x: self.x, y: self.y, z: self.x, w: self.z }
+    }
+
+    #[inline]
+    pub const fn xyyx(self) -> Float4 {
+        Float4 { x: self.x, y: self.y, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xyyy(self) -> Float4 {
+        Float4 { x: self.x, y: self.y, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xyyz(self) -> Float4 {
+        Float4 { x: self.x, y: self.y, z: self.y, w: self.z }
+    }
+
+    #[inline]
+    pub const fn xyzx(self) -> Float4 {
+        Float4 { x: self.x, y: self.y, z: self.z, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xyzy(self) -> Float4 {
+        Float4 { x: self.x, y: self.y, z: self.z, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xyzz(self) -> Float4 {
+        Float4 { x: self.x, y: self.y, z: self.z, w: self.z }
+    }
+
+    #[inline]
+    pub const fn xzxx(self) -> Float4 {
+        Float4 { x: self.x, y: self.z, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xzxy(self) -> Float4 {
+        Float4 { x: self.x, y: self.z, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xzxz(self) -> Float4 {
+        Float4 { x: self.x, y: self.z, z: self.x, w: self.z }
+    }
+
+    #[inline]
+    pub const fn xzyx(self) -> Float4 {
+        Float4 { x: self.x, y: self.z, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xzyy(self) -> Float4 {
+        Float4 { x: self.x, y: self.z, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xzyz(self) -> Float4 {
+        Float4 { x: self.x, y: self.z, z: self.y, w: self.z }
+    }
+
+    #[inline]
+    pub const fn xzzx(self) -> Float4 {
+        Float4 { x: self.x, y: self.z, z: self.z, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xzzy(self) -> Float4 {
+        Float4 { x: self.x, y: self.z, z: self.z, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xzzz(self) -> Float4 {
+        Float4 { x: self.x, y: self.z, z: self.z, w: self.z }
+    }
+
+    #[inline]
+    pub const fn yxxx(self) -> Float4 {
+        Float4 { x: self.y, y: self.x, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yxxy(self) -> Float4 {
+        Float4 { x: self.y, y: self.x, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yxxz(self) -> Float4 {
+        Float4 { x: self.y, y: self.x, z: self.x, w: self.z }
+    }
+
+    #[inline]
+    pub const fn yxyx(self) -> Float4 {
+        Float4 { x: self.y, y: self.x, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yxyy(self) -> Float4 {
+        Float4 { x: self.y, y: self.x, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yxzx(self) -> Float4 {
+        Float4 { x: self.y, y: self.x, z: self.z, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yxzy(self) -> Float4 {
+        Float4 { x: self.y, y: self.x, z: self.z, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yxzz(self) -> Float4 {
+        Float4 { x: self.y, y: self.x, z: self.z, w: self.z }
+    }
+
+    #[inline]
+    pub const fn yyxx(self) -> Float4 {
+        Float4 { x: self.y, y: self.y, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yyxy(self) -> Float4 {
+        Float4 { x: self.y, y: self.y, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yyxz(self) -> Float4 {
+        Float4 { x: self.y, y: self.y, z: self.x, w: self.z }
+    }
+
+    #[inline]
+    pub const fn yyyx(self) -> Float4 {
+        Float4 { x: self.y, y: self.y, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yyyy(self) -> Float4 {
+        Float4 { x: self.y, y: self.y, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yyyz(self) -> Float4 {
+        Float4 { x: self.y, y: self.y, z: self.y, w: self.z }
+    }
+
+    #[inline]
+    pub const fn yyzx(self) -> Float4 {
+        Float4 { x: self.y, y: self.y, z: self.z, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yyzy(self) -> Float4 {
+        Float4 { x: self.y, y: self.y, z: self.z, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yyzz(self) -> Float4 {
+        Float4 { x: self.y, y: self.y, z: self.z, w: self.z }
+    }
+
+    #[inline]
+    pub const fn yzxx(self) -> Float4 {
+        Float4 { x: self.y, y: self.z, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yzxy(self) -> Float4 {
+        Float4 { x: self.y, y: self.z, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yzxz(self) -> Float4 {
+        Float4 { x: self.y, y: self.z, z: self.x, w: self.z }
+    }
+
+    #[inline]
+    pub const fn yzyx(self) -> Float4 {
+        Float4 { x: self.y, y: self.z, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yzyy(self) -> Float4 {
+        Float4 { x: self.y, y: self.z, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yzyz(self) -> Float4 {
+        Float4 { x: self.y, y: self.z, z: self.y, w: self.z }
+    }
+
+    #[inline]
+    pub const fn yzzx(self) -> Float4 {
+        Float4 { x: self.y, y: self.z, z: self.z, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yzzy(self) -> Float4 {
+        Float4 { x: self.y, y: self.z, z: self.z, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yzzz(self) -> Float4 {
+        Float4 { x: self.y, y: self.z, z: self.z, w: self.z }
+    }
+
+    #[inline]
+    pub const fn zxxx(self) -> Float4 {
+        Float4 { x: self.z, y: self.x, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn zxxy(self) -> Float4 {
+        Float4 { x: self.z, y: self.x, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn zxxz(self) -> Float4 {
+        Float4 { x: self.z, y: self.x, z: self.x, w: self.z }
+    }
+
+    #[inline]
+    pub const fn zxyx(self) -> Float4 {
+        Float4 { x: self.z, y: self.x, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn zxyy(self) -> Float4 {
+        Float4 { x: self.z, y: self.x, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn zxyz(self) -> Float4 {
+        Float4 { x: self.z, y: self.x, z: self.y, w: self.z }
+    }
+
+    #[inline]
+    pub const fn zxzx(self) -> Float4 {
+        Float4 { x: self.z, y: self.x, z: self.z, w: self.x }
+    }
+
+    #[inline]
+    pub const fn zxzy(self) -> Float4 {
+        Float4 { x: self.z, y: self.x, z: self.z, w: self.y }
+    }
+
+    #[inline]
+    pub const fn zxzz(self) -> Float4 {
+        Float4 { x: self.z, y: self.x, z: self.z, w: self.z }
+    }
+
+    #[inline]
+    pub const fn zyxx(self) -> Float4 {
+        Float4 { x: self.z, y: self.y, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn zyxy(self) -> Float4 {
+        Float4 { x: self.z, y: self.y, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn zyxz(self) -> Float4 {
+        Float4 { x: self.z, y: self.y, z: self.x, w: self.z }
+    }
+
+    #[inline]
+    pub const fn zyyx(self) -> Float4 {
+        Float4 { x: self.z, y: self.y, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn zyyy(self) -> Float4 {
+        Float4 { x: self.z, y: self.y, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn zyyz(self) -> Float4 {
+        Float4 { x: self.z, y: self.y, z: self.y, w: self.z }
+    }
+
+    #[inline]
+    pub const fn zyzx(self) -> Float4 {
+        Float4 { x: self.z, y: self.y, z: self.z, w: self.x }
+    }
+
+    #[inline]
+    pub const fn zyzy(self) -> Float4 {
+        Float4 { x: self.z, y: self.y, z: self.z, w: self.y }
+    }
+
+    #[inline]
+    pub const fn zyzz(self) -> Float4 {
+        Float4 { x: self.z, y: self.y, z: self.z, w: self.z }
+    }
+
+    #[inline]
+    pub const fn zzxx(self) -> Float4 {
+        Float4 { x: self.z, y: self.z, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn zzxy(self) -> Float4 {
+        Float4 { x: self.z, y: self.z, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn zzxz(self) -> Float4 {
+        Float4 { x: self.z, y: self.z, z: self.x, w: self.z }
+    }
+
+    #[inline]
+    pub const fn zzyx(self) -> Float4 {
+        Float4 { x: self.z, y: self.z, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn zzyy(self) -> Float4 {
+        Float4 { x: self.z, y: self.z, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn zzyz(self) -> Float4 {
+        Float4 { x: self.z, y: self.z, z: self.y, w: self.z }
+    }
+
+    #[inline]
+    pub const fn zzzx(self) -> Float4 {
+        Float4 { x: self.z, y: self.z, z: self.z, w: self.x }
+    }
+
+    #[inline]
+    pub const fn zzzy(self) -> Float4 {
+        Float4 { x: self.z, y: self.z, z: self.z, w: self.y }
+    }
+    
+    #[inline]
+    pub const fn zzzz(self) -> Float4 {
+        Float4 { x: self.z, y: self.z, z: self.z, w: self.z }
     }
 }
 
