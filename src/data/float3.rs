@@ -1,4 +1,5 @@
 use core::fmt;
+use core::ops;
 use core::f32;
 
 use super::float2::Float2;
@@ -651,6 +652,65 @@ impl Float3 {
     #[inline]
     pub const fn zzzz(self) -> Float4 {
         Float4 { x: self.z, y: self.z, z: self.z, w: self.z }
+    }
+}
+
+impl Default for Float3 {
+    #[inline(always)]
+    fn default() -> Self {
+        Self::ZERO
+    }
+}
+
+impl From<Float2> for Float3 {
+    #[inline]
+    fn from(value: Float2) -> Self {
+        Float3 { x: value.x, y: value.y, z: 0.0 }
+    }
+}
+
+impl From<Float4> for Float3 {
+    #[inline]
+    fn from(value: Float4) -> Self {
+        Float3 { x: value.x, y: value.y, z: value.z }
+    }
+}
+
+impl AsRef<[f32; 3]> for Float3 {
+    #[inline]
+    fn as_ref(&self) -> &[f32; 3] {
+        unsafe { &*(self as *const Float3 as *const [f32; 3]) }
+    }
+}
+
+impl AsMut<[f32; 3]> for Float3 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [f32; 3] {
+        unsafe { &mut *(self as *mut Float3 as *mut [f32; 3]) }
+    }
+}
+
+impl ops::Index<usize> for Float3 {
+    type Output = f32;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("index out of range!"),
+        }
+    }
+}
+
+impl ops::IndexMut<usize> for Float3 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("index out of range!")
+        }
     }
 }
 
