@@ -72,6 +72,7 @@ pub fn vector_div(a: Vector, b: Vector) -> Vector {
     unsafe { vdivq_f32(a, b) }
 }
 
+/// Absolute value on vector elements
 #[inline]
 pub fn vector_abs(v: Vector) -> Vector {
     unsafe { vabsq_f32(v) }
@@ -79,21 +80,25 @@ pub fn vector_abs(v: Vector) -> Vector {
 
 
 
+/// Length of a two-element vector
 #[inline(always)]
 pub fn vector2_length_sq(v: Vector) -> f32 {
     vector2_dot(v, v)
 }
 
+/// Length of a three-element vector
 #[inline(always)]
 pub fn vector3_length_sq(v: Vector) -> f32 {
     vector3_dot(v, v)
 }
 
+/// Length of a four-element vector
 #[inline(always)]
 pub fn vector4_length_sq(v: Vector) -> f32 {
     vector4_dot(v, v)
 }
 
+/// Dot product of a two-element vector
 #[inline]
 pub fn vector2_dot(a: Vector, b: Vector) -> f32 {
     unsafe { 
@@ -103,6 +108,7 @@ pub fn vector2_dot(a: Vector, b: Vector) -> f32 {
     }
 }
 
+/// Dot product of a three-element vector
 #[inline]
 pub fn vector3_dot(a: Vector, b: Vector) -> f32 {
     unsafe {
@@ -116,6 +122,7 @@ pub fn vector3_dot(a: Vector, b: Vector) -> f32 {
     }
 }
 
+/// Dot product of a four-element vector
 #[inline]
 pub fn vector4_dot(a: Vector, b: Vector) -> f32 {
     unsafe {

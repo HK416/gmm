@@ -41,7 +41,7 @@ fn vector_add_test() {
     let v_diff = vector_sub(v_res, v_c);
     let length = vector4_length_sq(v_diff);
 
-    assert!(length <= f32::EPSILON, "invalid add operation!");
+    assert!(length <= f32::EPSILON, "invalid add operation! (length: {})", length);
 }
 
 #[test]
@@ -65,7 +65,7 @@ fn vector_sub_test() {
     let v_diff = vector_sub(v_res, v_c);
     let length = vector4_length_sq(v_diff);
 
-    assert!(length <= f32::EPSILON, "invalid sub operation!");
+    assert!(length <= f32::EPSILON, "invalid sub operation! (length: {})", length);
 }
 
 #[test]
@@ -89,7 +89,7 @@ fn vector_mul_test() {
     let v_diff = vector_sub(v_res, v_c);
     let length = vector4_length_sq(v_diff);
 
-    assert!(length <= f32::EPSILON, "invalid mul operation!");
+    assert!(length <= f32::EPSILON, "invalid mul operation! (length: {})", length);
 }
 
 #[test]
@@ -113,7 +113,7 @@ fn vector_div_test() {
     let v_diff = vector_sub(v_res, v_c);
     let length = vector4_length_sq(v_diff);
 
-    assert!(length <= f32::EPSILON, "invalid div operation!");
+    assert!(length <= f32::EPSILON, "invalid div operation! (length: {})", length);
 }
 
 #[test]
@@ -129,7 +129,7 @@ fn vector2_dot_test() {
     let v_a = load_float4(a);
     let res = vector2_dot(v_a, v_a);
 
-    assert!((res - c).abs() <= f32::EPSILON, "invalid vector2 dot operation!");
+    assert!((res - c).abs() <= f32::EPSILON, "invalid vector2 dot operation! (res:{}, c:{})", res, c);
 }
 
 #[test]
@@ -145,7 +145,7 @@ fn vector3_dot_test() {
     let v_a = load_float4(a);
     let res = vector3_dot(v_a, v_a);
 
-    assert!((res - c).abs() <= f32::EPSILON, "invalid vector3 dot operation!");
+    assert!((res - c).abs() <= f32::EPSILON, "invalid vector3 dot operation! (res:{}, c:{})", res, c);
 }
 
 #[test]
