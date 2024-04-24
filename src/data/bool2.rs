@@ -45,6 +45,149 @@ impl Boolean2 {
     }
 }
 
+// Vector swizzle code implementation.
+impl Boolean2 {
+    #[inline]
+    pub const fn xx(self) -> Boolean2 {
+        Boolean2 { x: self.x, y: self.x }
+    }
+
+    #[inline]
+    pub const fn xy(self) -> Boolean2 {
+        Boolean2 { x: self.x, y: self.y }
+    }
+
+    #[inline]
+    pub const fn yx(self) -> Boolean2 {
+        Boolean2 { x: self.y, y: self.x }
+    }
+
+    #[inline]
+    pub const fn yy(self) -> Boolean2 {
+        Boolean2 { x: self.y, y: self.y }
+    }
+
+    #[inline]
+    pub const fn xxx(self) -> Boolean3 {
+        Boolean3 { x: self.x, y: self.x, z: self.x }
+    }
+
+    #[inline]
+    pub const fn xxy(self) -> Boolean3 {
+        Boolean3 { x: self.x, y: self.x, z: self.y }
+    }
+
+    #[inline]
+    pub const fn xyx(self) -> Boolean3 {
+        Boolean3 { x: self.x, y: self.y, z: self.x }
+    }
+
+    #[inline]
+    pub const fn xyy(self) -> Boolean3 {
+        Boolean3 { x: self.x, y: self.y, z: self.y }
+    }
+
+    #[inline]
+    pub const fn yxx(self) -> Boolean3 {
+        Boolean3 { x: self.y, y: self.x, z: self.x }
+    }
+
+    #[inline]
+    pub const fn yxy(self) -> Boolean3 {
+        Boolean3 { x: self.y, y: self.x, z: self.y }
+    }
+
+    #[inline]
+    pub const fn yyx(self) -> Boolean3 {
+        Boolean3 { x: self.y, y: self.y, z: self.x }
+    }
+
+    #[inline]
+    pub const fn yyy(self) -> Boolean3 {
+        Boolean3 { x: self.y, y: self.y, z: self.y }
+    }
+
+    #[inline]
+    pub const fn xxxx(self) -> Boolean4 {
+        Boolean4 { x: self.x, y: self.x, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xxxy(self) -> Boolean4 {
+        Boolean4 { x: self.x, y: self.x, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xxyx(self) -> Boolean4 {
+        Boolean4 { x: self.x, y: self.x, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xxyy(self) -> Boolean4 {
+        Boolean4 { x: self.x, y: self.x, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xyxx(self) -> Boolean4 {
+        Boolean4 { x: self.x, y: self.y, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xyxy(self) -> Boolean4 {
+        Boolean4 { x: self.x, y: self.y, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xyyx(self) -> Boolean4 {
+        Boolean4 { x: self.x, y: self.y, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xyyy(self) -> Boolean4 {
+        Boolean4 { x: self.x, y: self.y, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yxxx(self) -> Boolean4 {
+        Boolean4 { x: self.y, y: self.x, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yxxy(self) -> Boolean4 {
+        Boolean4 { x: self.y, y: self.x, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yxyx(self) -> Boolean4 {
+        Boolean4 { x: self.y, y: self.x, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yxyy(self) -> Boolean4 {
+        Boolean4 { x: self.y, y: self.x, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yyxx(self) -> Boolean4 {
+        Boolean4 { x: self.y, y: self.y, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yyxy(self) -> Boolean4 {
+        Boolean4 { x: self.y, y: self.y, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yyyx(self) -> Boolean4 {
+        Boolean4 { x: self.y, y: self.y, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yyyy(self) -> Boolean4 {
+        Boolean4 { x: self.y, y: self.y, z: self.y, w: self.y }
+    }
+}
+
 impl Default for Boolean2 {
     #[inline(always)]
     fn default() -> Self {
