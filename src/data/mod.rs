@@ -4,6 +4,9 @@ pub use self::bool2::*;
 pub mod bool3;
 pub use self::bool3::*;
 
+pub mod bool4;
+pub use self::bool4::*;
+
 pub mod float2;
 pub use self::float2::*;
 
