@@ -105,6 +105,65 @@ fn vector_div_test() {
 }
 
 #[test]
+fn vector_neg_test() {
+    const X: f32 = 1.1234567;
+    const Y: f32 = 2.2345678;
+    const Z: f32 = 3.3456789;
+    const W: f32 = 4.4567890;
+
+    let a = Float4::new(X, Y, Z, W);
+    let b = Float4::new(-X, -Y, -Z, -W);
+
+    let v_a = load_float4(a);
+    let v_b = load_float4(b);
+    let v_res = vector_neg(v_a);
+
+    assert!(vector4_eq(v_res, v_b), "invalid negative operation!");
+}
+
+#[test]
+fn vector_min_test() {
+    const X: f32 = 1.1234567;
+    const Y: f32 = 2.2345678;
+    const Z: f32 = 3.3456789;
+    const W: f32 = 4.4567890;
+
+    const VAL: f32 = 3.141592;
+
+    let a = Float4::new(X, Y, Z, W);
+    let b = Float4::fill(VAL);
+    let c = Float4::new(X, Y, VAL, VAL);
+
+    let v_a = load_float4(a);
+    let v_b = load_float4(b);
+    let v_c = load_float4(c);
+    let v_res = vector_min(v_a, v_b);
+
+    assert!(vector4_eq(v_res, v_c), "invalid minimum operation!");
+}
+
+#[test]
+fn vector_max_test() {
+    const X: f32 = 1.1234567;
+    const Y: f32 = 2.2345678;
+    const Z: f32 = 3.3456789;
+    const W: f32 = 4.4567890;
+
+    const VAL: f32 = 3.141592;
+
+    let a = Float4::new(X, Y, Z, W);
+    let b = Float4::fill(VAL);
+    let c = Float4::new(VAL, VAL, Z, W);
+
+    let v_a = load_float4(a);
+    let v_b = load_float4(b);
+    let v_c = load_float4(c);
+    let v_res = vector_max(v_a, v_b);
+
+    assert!(vector4_eq(v_res, v_c), "invalid maximum operation!");
+}
+
+#[test]
 fn vector2_dot_test() {
     const X: f32 = 1.1234567;
     const Y: f32 = 2.2345678;

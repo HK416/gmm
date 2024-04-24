@@ -85,6 +85,24 @@ pub fn vector_abs(v: Vector) -> Vector {
     }
 }
 
+/// Negativizes the given vector.
+#[inline]
+pub fn vector_neg(v: Vector) -> Vector {
+    unsafe { _mm_sub_ps(_mm_setzero_ps(), v) }
+}
+
+/// Takes the smaller of the elements of the two vectors.
+#[inline]
+pub fn vector_min(a: Vector, b: Vector) -> Vector {
+    unsafe { _mm_min_ps(a, b) }
+}
+
+/// Takes the larger of the elements of the two vectors.
+#[inline]
+pub fn vector_max(a: Vector, b: Vector) -> Vector {
+    unsafe { _mm_max_ps(a, b) }
+}
+
 
 
 /// Length of a two-element vector.
