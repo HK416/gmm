@@ -105,22 +105,79 @@ pub fn vector_max(a: Vector, b: Vector) -> Vector {
 
 
 
-/// Length of a two-element vector.
+/// Length squared of a two-element vector.
 #[inline(always)]
 pub fn vector2_length_sq(v: Vector) -> f32 {
     vector2_dot(v, v)
 }
 
-/// Length of a three-element vector.
+/// Length squared of a three-element vector.
 #[inline(always)]
 pub fn vector3_length_sq(v: Vector) -> f32 {
     vector3_dot(v, v)
 }
 
-/// Length of a four-element vector.
+/// Length squared of a four-element vector.
 #[inline(always)]
 pub fn vector4_length_sq(v: Vector) -> f32 {
     vector4_dot(v, v)
+}
+
+/// Length of a two-element vector.
+#[inline(always)]
+pub fn vector2_length(v: Vector) -> f32 {
+    vector2_length_sq(v).sqrt()
+}
+
+/// Length of a three-element vector.
+#[inline(always)]
+pub fn vector3_length(v: Vector) -> f32 {
+    vector3_length_sq(v).sqrt()
+}
+
+/// Length of a four-element vector.
+#[inline(always)]
+pub fn vector4_length(v: Vector) -> f32 {
+    vector4_length_sq(v).sqrt()
+}
+
+/// Normalizes a given two-element vector.
+/// If normalization fails, `None` is returned.
+#[inline]
+pub fn vector2_normalize(v: Vector) -> Option<Vector> {
+    let len = vector2_length(v);
+    if len > 0.0 {
+        let len = load_float4(Float4::fill(len));
+        Some(vector_div(v, len))
+    } else {
+        None
+    }
+}
+
+/// Normalizes a given three-element vector.
+/// If normalization fails, `None` is returned.
+#[inline]
+pub fn vector3_normalize(v: Vector) -> Option<Vector> {
+    let len = vector3_length(v);
+    if len > 0.0 {
+        let len = load_float4(Float4::fill(len));
+        Some(vector_div(v, len))
+    } else {
+        None
+    }
+}
+
+/// Normalizes a given four-element vector.
+/// If normalization fails, `None` is returned.
+#[inline]
+pub fn vector4_normalize(v: Vector) -> Option<Vector> {
+    let len = vector4_length(v);
+    if len > 0.0 {
+        let len = load_float4(Float4::fill(len));
+        Some(vector_div(v, len))
+    } else {
+        None
+    }
 }
 
 /// Dot product of a two-element vector.
