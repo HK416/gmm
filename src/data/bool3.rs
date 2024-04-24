@@ -1,4 +1,8 @@
 use core::fmt;
+use core::ops;
+
+use super::bool2::Boolean2;
+use super::bool4::Boolean4;
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -39,6 +43,66 @@ impl Boolean3 {
     #[inline]
     pub const fn all(self) -> bool {
         self.x & self.y & self.z
+    }
+}
+
+impl Default for Boolean3 {
+    #[inline(always)]
+    fn default() -> Self {
+        Self::FALSE
+    }
+}
+
+impl From<Boolean2> for Boolean3 {
+    #[inline]
+    fn from(value: Boolean2) -> Self {
+        Boolean3 { x: value.x, y: value.y, z: false }
+    }
+}
+
+impl From<Boolean4> for Boolean3 {
+    #[inline]
+    fn from(value: Boolean4) -> Self {
+        Boolean3 { x: value.x, y: value.y, z: value.z }
+    }
+}
+
+impl AsRef<[bool; 3]> for Boolean3 {
+    #[inline]
+    fn as_ref(&self) -> &[bool; 3] {
+        unsafe { &*(self as *const Boolean3 as *const [bool; 3]) }
+    }
+}
+
+impl AsMut<[bool; 3]> for Boolean3 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [bool; 3] {
+        unsafe { &mut *(self as *mut Boolean3 as *mut [bool; 3]) }
+    }
+}
+
+impl ops::Index<usize> for Boolean3 {
+    type Output = bool;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("index out of range!"),
+        }
+    }
+}
+
+impl ops::IndexMut<usize> for Boolean3 {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("index out of range!"),
+        }
     }
 }
 
