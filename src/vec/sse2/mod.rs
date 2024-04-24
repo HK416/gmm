@@ -141,3 +141,30 @@ pub fn vector4_dot(a: Vector, b: Vector) -> f32 {
         _mm_cvtss_f32(sum)
     }
 }
+
+/// Checks if two elements of two given vectors are equal.
+/// This function compares using [`f32::EPSILON`].
+#[inline]
+pub fn vector2_eq(a: Vector, b: Vector) -> bool {
+    let diff = vector_sub(a, b);
+    let len = vector2_length_sq(diff);
+    return len <= f32::EPSILON;
+}
+
+/// Checks if three elements of two given vectors are equal.
+/// This function compares using [`f32::EPSILON`].
+#[inline]
+pub fn vector3_eq(a: Vector, b: Vector) -> bool {
+    let diff = vector_sub(a, b);
+    let len = vector3_length_sq(diff);
+    return len <= f32::EPSILON;
+}
+
+/// Checks if four elements of two given vectors are equal.
+/// This function compares using [`f32::EPSILON`].
+#[inline]
+pub fn vector4_eq(a: Vector, b: Vector) -> bool {
+    let diff = vector_sub(a, b);
+    let len = vector4_length_sq(diff);
+    return len <= f32::EPSILON;
+}

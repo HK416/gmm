@@ -38,10 +38,7 @@ fn vector_add_test() {
     let v_c = load_float4(c);
     let v_res = vector_add(v_a, v_b);
     
-    let v_diff = vector_sub(v_res, v_c);
-    let length = vector4_length_sq(v_diff);
-
-    assert!(length <= f32::EPSILON, "invalid add operation! (length: {})", length);
+    assert!(vector4_eq(v_res, v_c), "invalid add operation!");
 }
 
 #[test]
@@ -62,10 +59,7 @@ fn vector_sub_test() {
     let v_c = load_float4(c);
     let v_res = vector_sub(v_a, v_b);
 
-    let v_diff = vector_sub(v_res, v_c);
-    let length = vector4_length_sq(v_diff);
-
-    assert!(length <= f32::EPSILON, "invalid sub operation! (length: {})", length);
+    assert!(vector4_eq(v_res, v_c), "invalid sub operation!");
 }
 
 #[test]
@@ -86,10 +80,7 @@ fn vector_mul_test() {
     let v_c = load_float4(c);
     let v_res = vector_mul(v_a, v_b);
 
-    let v_diff = vector_sub(v_res, v_c);
-    let length = vector4_length_sq(v_diff);
-
-    assert!(length <= f32::EPSILON, "invalid mul operation! (length: {})", length);
+    assert!(vector4_eq(v_res, v_c), "invalid mul operation!");
 }
 
 #[test]
@@ -110,10 +101,7 @@ fn vector_div_test() {
     let v_c = load_float4(c);
     let v_res = vector_div(v_a, v_b);
 
-    let v_diff = vector_sub(v_res, v_c);
-    let length = vector4_length_sq(v_diff);
-
-    assert!(length <= f32::EPSILON, "invalid div operation! (length: {})", length);
+    assert!(vector4_eq(v_res, v_c), "invalid div operation!");
 }
 
 #[test]
