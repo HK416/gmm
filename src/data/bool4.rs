@@ -4,6 +4,7 @@ use core::ops;
 use super::bool2::Boolean2;
 use super::bool3::Boolean3;
 
+/// A structure that stores four-dimensional boolean data.
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Boolean4 {
