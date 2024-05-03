@@ -211,6 +211,29 @@ pub fn vector4_dot(a: Vector, b: Vector) -> f32 {
     }
 }
 
+/// Cross product of a three-element vector
+#[inline]
+pub fn vector3_cross(a: Vector, b: Vector) -> Vector {
+    unsafe {
+        const BIT_MASK: [u32; 4] = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0000000];
+
+        let a_xy = vget_low_f32(a); // [ax, ay]
+        let a_zz = vdup_lane_f32::<0>(vget_high_f32(a)); // [az, az]
+        let a_zx = vext_f32::<0>(a_zz, a_xy); // [az, ax]
+        let a_yz = vext_f32::<1>(a_xy, a_zz); // [ay, az]
+
+        let b_xy = vget_low_f32(b); // [bx, by]
+        let b_yx = vrev64_f32(b_xy); // [by, bx]
+        let b_zz = vdup_lane_f32::<0>(vget_high_f32(b)); // [bz, bz]
+        let b_yz = vext_f32::<0>(b_yx, b_zz); // [by, bz]
+        let b_zx = vext_f32::<0>(b_zz, b_xy); // [bz, bx]
+
+        let result = vmulq_f32(vcombine_f32(a_yz, a_xy), vcombine_f32(b_zx, b_yx)); // [ay*bz, az*bx, ax*by, _]
+        let result = vmlsq_f32(result, vcombine_f32(a_zx, a_yz), vcombine_f32(b_yz, b_xy)); // [ay*bz-az*by, az*bx-ax*bz, ax*by-ay*bx, _]
+        vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(result), vld1q_dup_u32(&BIT_MASK as *const u32)))
+    }
+}
+
 /// Checks if two elements of two given vectors are equal.
 /// This function compares using [`f32::EPSILON`].
 #[inline]

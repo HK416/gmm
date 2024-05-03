@@ -210,3 +210,25 @@ fn vector4_dot_test() {
     
     assert!((res - c).abs() <= f32::EPSILON, "invalid vector4 dot operation! (res:{}, c:{})", res, c);
 }
+
+#[test]
+fn vector3_cross_test() {
+    const AX: f32 = 1.0;
+    const AY: f32 = 0.0;
+    const AZ: f32 = 0.0;
+
+    const BX: f32 = 0.0;
+    const BY: f32 = 1.0;
+    const BZ: f32 = 0.0;
+
+    let a = Float3::new(AX, AY, AZ);
+    let b = Float3::new(BX, BY, BZ);
+    let c = Float3::new(AY * BZ - AZ * BY, AX * BZ - AZ * BX, AX * BY - AY * BX);
+
+    let v_a = load_float3(a);
+    let v_b = load_float3(b);
+    let v_c = load_float3(c);
+    let v_res = vector3_cross(v_a, v_b);
+
+    assert!(vector3_eq(v_res, v_c), "invalid vector3 cross operation!");
+}
