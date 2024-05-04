@@ -1,4 +1,9 @@
 use core::fmt;
+use core::ops;
+
+use super::bool2::Boolean2;
+use super::uint3::UInteger3;
+use super::uint4::UInteger4;
 
 /// A structure that stores two-dimensional unsigned integer data.
 #[repr(C)]
@@ -39,6 +44,74 @@ impl UInteger2 {
     #[inline(always)]
     pub const fn fill(val: u32) -> Self {
         Self { x: val, y: val }
+    }
+}
+
+impl Default for UInteger2 {
+    #[inline(always)]
+    fn default() -> Self {
+        Self::ZERO
+    }
+}
+
+impl Into<Boolean2> for UInteger2 {
+    #[inline]
+    fn into(self) -> Boolean2 {
+        Boolean2 { 
+            x: self.x == 0xFFFFFFFF, 
+            y: self.y == 0xFFFFFFFF 
+        }
+    }
+}
+
+impl From<UInteger3> for UInteger2 {
+    #[inline]
+    fn from(value: UInteger3) -> Self {
+        UInteger2 { x: value.x, y: value.y }
+    }
+}
+
+impl From<UInteger4> for UInteger2 {
+    #[inline]
+    fn from(value: UInteger4) -> Self {
+        UInteger2 { x: value.x, y: value.y }
+    }
+}
+
+impl AsRef<[u32; 2]> for UInteger2 {
+    #[inline]
+    fn as_ref(&self) -> &[u32; 2] {
+        unsafe { &*(self as *const UInteger2 as *const [u32; 2]) }
+    }
+}
+
+impl AsMut<[u32; 2]> for UInteger2 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [u32; 2] {
+        unsafe { &mut *(self as *mut UInteger2 as *mut [u32; 2]) }
+    }
+}
+
+impl ops::Index<usize> for UInteger2 {
+    type Output = u32;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            _ => panic!("index out of range!"),
+        }
+    }
+}
+
+impl ops::IndexMut<usize> for UInteger2 {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            _ => panic!("index out of range!"),
+        }
     }
 }
 
