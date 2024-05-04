@@ -1,4 +1,9 @@
 use core::fmt;
+use core::ops;
+
+use super::bool3::Boolean3;
+use super::uint2::UInteger2;
+use super::uint4::UInteger4;
 
 /// A structure that stores three-dimensional unsigned integer data.
 #[repr(C)]
@@ -41,6 +46,77 @@ impl UInteger3 {
     #[inline(always)]
     pub const fn fill(val: u32) -> Self {
         Self { x: val, y: val, z: val }
+    }
+}
+
+impl Default for UInteger3 {
+    #[inline(always)]
+    fn default() -> Self {
+        Self::ZERO
+    }
+}
+
+impl Into<Boolean3> for UInteger3 {
+    #[inline]
+    fn into(self) -> Boolean3 {
+        Boolean3 { 
+            x: self.x == 0xFFFFFFFF, 
+            y: self.y == 0xFFFFFFFF, 
+            z: self.z == 0xFFFFFFFF 
+        }
+    }
+}
+
+impl From<UInteger2> for UInteger3 {
+    #[inline]
+    fn from(value: UInteger2) -> Self {
+        UInteger3 { x: value.x, y: value.y, z: 0 }
+    }
+}
+
+impl From<UInteger4> for UInteger3 {
+    #[inline]
+    fn from(value: UInteger4) -> Self {
+        UInteger3 { x: value.x, y: value.y, z: value.z }
+    }
+}
+
+impl AsRef<[u32; 3]> for UInteger3 {
+    #[inline]
+    fn as_ref(&self) -> &[u32; 3] {
+        unsafe { &*(self as *const UInteger3 as *const [u32; 3]) }
+    }
+}
+
+impl AsMut<[u32; 3]> for UInteger3 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [u32; 3] {
+        unsafe { &mut *(self as *mut UInteger3 as *mut [u32; 3]) }
+    }
+}
+
+impl ops::Index<usize> for UInteger3 {
+    type Output = u32;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("index out of range!"),
+        }
+    }
+}
+
+impl ops::IndexMut<usize> for UInteger3 {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("index out of range!"),
+        }
     }
 }
 
