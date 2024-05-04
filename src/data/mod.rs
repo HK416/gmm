@@ -18,3 +18,6 @@ pub use self::float4::*;
 
 pub mod uint2;
 pub use self::uint2::*;
+
+pub mod uint3;
+pub use self::uint3::*;
