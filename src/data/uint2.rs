@@ -47,6 +47,149 @@ impl UInteger2 {
     }
 }
 
+// Vector swizzle code implementation.
+impl UInteger2 {
+    #[inline]
+    pub const fn xx(self) -> UInteger2 {
+        UInteger2 { x: self.x, y: self.x }
+    }
+
+    #[inline]
+    pub const fn xy(self) -> UInteger2 {
+        UInteger2 { x: self.x, y: self.y }
+    }
+
+    #[inline]
+    pub const fn yx(self) -> UInteger2 {
+        UInteger2 { x: self.y, y: self.x }
+    }
+
+    #[inline]
+    pub const fn yy(self) -> UInteger2 {
+        UInteger2 { x: self.y, y: self.y }
+    }
+
+    #[inline]
+    pub const fn xxx(self) -> UInteger3 {
+        UInteger3 { x: self.x, y: self.x, z: self.x }
+    }
+
+    #[inline]
+    pub const fn xxy(self) -> UInteger3 {
+        UInteger3 { x: self.x, y: self.x, z: self.y }
+    }
+
+    #[inline]
+    pub const fn xyx(self) -> UInteger3 {
+        UInteger3 { x: self.x, y: self.y, z: self.x }
+    }
+
+    #[inline]
+    pub const fn xyy(self) -> UInteger3 {
+        UInteger3 { x: self.x, y: self.y, z: self.y }
+    }
+
+    #[inline]
+    pub const fn yxx(self) -> UInteger3 {
+        UInteger3 { x: self.y, y: self.x, z: self.x }
+    }
+
+    #[inline]
+    pub const fn yxy(self) -> UInteger3 {
+        UInteger3 { x: self.y, y: self.x, z: self.y }
+    }
+
+    #[inline]
+    pub const fn yyx(self) -> UInteger3 {
+        UInteger3 { x: self.y, y: self.y, z: self.x }
+    }
+
+    #[inline]
+    pub const fn yyy(self) -> UInteger3 {
+        UInteger3 { x: self.y, y: self.y, z: self.y }
+    }
+
+    #[inline]
+    pub const fn xxxx(self) -> UInteger4 {
+        UInteger4 { x: self.x, y: self.x, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xxxy(self) -> UInteger4 {
+        UInteger4 { x: self.x, y: self.x, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xxyx(self) -> UInteger4 {
+        UInteger4 { x: self.x, y: self.x, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xxyy(self) -> UInteger4 {
+        UInteger4 { x: self.x, y: self.x, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xyxx(self) -> UInteger4 {
+        UInteger4 { x: self.x, y: self.y, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xyxy(self) -> UInteger4 {
+        UInteger4 { x: self.x, y: self.y, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xyyx(self) -> UInteger4 {
+        UInteger4 { x: self.x, y: self.y, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xyyy(self) -> UInteger4 {
+        UInteger4 { x: self.x, y: self.y, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yxxx(self) -> UInteger4 {
+        UInteger4 { x: self.y, y: self.x, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yxxy(self) -> UInteger4 {
+        UInteger4 { x: self.y, y: self.x, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yxyx(self) -> UInteger4 {
+        UInteger4 { x: self.y, y: self.x, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yxyy(self) -> UInteger4 {
+        UInteger4 { x: self.y, y: self.x, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yyxx(self) -> UInteger4 {
+        UInteger4 { x: self.y, y: self.y, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yyxy(self) -> UInteger4 {
+        UInteger4 { x: self.y, y: self.y, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yyyx(self) -> UInteger4 {
+        UInteger4 { x: self.y, y: self.y, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yyyy(self) -> UInteger4 {
+        UInteger4 { x: self.y, y: self.y, z: self.y, w: self.y }
+    }
+}
+
 impl Default for UInteger2 {
     #[inline(always)]
     fn default() -> Self {
