@@ -21,3 +21,6 @@ pub use self::uint2::*;
 
 pub mod uint3;
 pub use self::uint3::*;
+
+pub mod uint4;
+pub use self::uint4::*;
