@@ -650,6 +650,17 @@ impl Into<Boolean3> for UInteger3 {
     }
 }
 
+impl From<Boolean3> for UInteger3 {
+    #[inline]
+    fn from(value: Boolean3) -> Self {
+        UInteger3 { 
+            x: if value.x { 0xFFFFFFFF } else { 0 }, 
+            y: if value.y { 0xFFFFFFFF } else { 0 }, 
+            z: if value.z { 0xFFFFFFFF } else { 0 } 
+        }
+    }
+}
+
 impl From<UInteger2> for UInteger3 {
     #[inline]
     fn from(value: UInteger2) -> Self {

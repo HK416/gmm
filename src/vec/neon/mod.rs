@@ -6,7 +6,28 @@ use crate::data::*;
 /// This is the data type used in vector operations.
 pub type Vector = float32x4_t;
 
+/// This is the data type used in vector operations.
+pub type VectorU32 = uint32x4_t;
 
+
+
+/// Load vector data from [`Boolean2`].
+#[inline(always)]
+pub fn load_boolean2(src: Boolean2) -> VectorU32 {
+    load_uinteger2(UInteger2::from(src))
+}
+
+/// Load vector data from [`Boolean3`].
+#[inline(always)]
+pub fn load_boolean3(src: Boolean3) -> VectorU32 {
+    load_uinteger3(UInteger3::from(src))
+}
+
+/// Load vector data from [`Boolean4`].
+#[inline(always)]
+pub fn load_boolean4(src: Boolean4) -> VectorU32 {
+    load_uinteger4(UInteger4::from(src))
+}
 
 /// Load vector data from [`Float2`].
 #[inline(always)]
@@ -26,6 +47,42 @@ pub fn load_float4(src: Float4) -> Vector {
     unsafe { vld1q_f32(&src as *const Float4 as *const f32) }
 }
 
+/// Load vector data from [`UInteger2`].
+#[inline(always)]
+pub fn load_uinteger2(src: UInteger2) -> VectorU32 {
+    load_uinteger4(UInteger4::from(src))
+}
+
+/// Load vector data from [`UInteger3`].
+#[inline(always)]
+pub fn load_uinteger3(src: UInteger3) -> VectorU32 {
+    load_uinteger4(UInteger4::from(src))
+}
+
+/// Load vector data from [`UInteger4`].
+#[inline(always)]
+pub fn load_uinteger4(src: UInteger4) -> VectorU32 {
+    unsafe { vld1q_u32(&src as *const UInteger4 as *const u32) }
+}
+
+/// Store vector data in [`Boolean2`].
+#[inline(always)]
+pub fn store_boolean2(src: VectorU32) -> Boolean2 {
+    store_uinteger2(src).into()
+}
+
+/// Store vector data in [`Boolean3`].
+#[inline(always)]
+pub fn store_boolean3(src: VectorU32) -> Boolean3 {
+    store_uinteger3(src).into()
+}
+
+/// Store vector data in [`Boolean4`].
+#[inline(always)]
+pub fn store_boolean4(src: VectorU32) -> Boolean4 {
+    store_uinteger4(src).into()
+}
+
 /// Store vector data in [`Float2`].
 #[inline(always)]
 pub fn store_float2(src: Vector) -> Float2 {
@@ -43,6 +100,26 @@ pub fn store_float3(src: Vector) -> Float3 {
 pub fn store_float4(src: Vector) -> Float4 {
     let mut dst = Float4::default();
     unsafe { vst1q_f32(&mut dst as *mut Float4 as *mut f32, src) };
+    dst
+}
+
+/// Store vector data in [`UInteger2`].
+#[inline(always)]
+pub fn store_uinteger2(src: VectorU32) -> UInteger2 {
+    UInteger2::from(store_uinteger4(src))
+}
+
+/// Store vector data in [`UInteger3`].
+#[inline(always)]
+pub fn store_uinteger3(src: VectorU32) -> UInteger3 {
+    UInteger3::from(store_uinteger4(src))
+}
+
+/// Store vector data in [`UInteger4`].
+#[inline]
+pub fn store_uinteger4(src: VectorU32) -> UInteger4 {
+    let mut dst = UInteger4::default();
+    unsafe { vst1q_u32(&mut dst as *mut UInteger4 as *mut u32, src) };
     dst
 }
 

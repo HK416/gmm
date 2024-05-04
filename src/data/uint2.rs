@@ -207,6 +207,16 @@ impl Into<Boolean2> for UInteger2 {
     }
 }
 
+impl From<Boolean2> for UInteger2 {
+    #[inline]
+    fn from(value: Boolean2) -> Self {
+        UInteger2 { 
+            x: if value.x { 0xFFFFFFFF } else { 0 }, 
+            y: if value.y { 0xFFFFFFFF } else { 0 } 
+        }
+    }
+}
+
 impl From<UInteger3> for UInteger2 {
     #[inline]
     fn from(value: UInteger3) -> Self {

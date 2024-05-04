@@ -1755,6 +1755,18 @@ impl Into<Boolean4> for UInteger4 {
     }
 }
 
+impl From<Boolean4> for UInteger4 {
+    #[inline]
+    fn from(value: Boolean4) -> Self {
+        UInteger4 { 
+            x: if value.x { 0xFFFFFFFF } else { 0 }, 
+            y: if value.y { 0xFFFFFFFF } else { 0 }, 
+            z: if value.z { 0xFFFFFFFF } else { 0 }, 
+            w: if value.w { 0xFFFFFFFF } else { 0 } 
+        }
+    }
+}
+
 impl From<UInteger2> for UInteger4 {
     #[inline]
     fn from(value: UInteger2) -> Self {

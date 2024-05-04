@@ -21,6 +21,25 @@ fn vector_load_store_test() {
 }
 
 #[test]
+fn vectoru32_load_store_test() {
+    const X: u32 = 10;
+    const Y: u32 = 2000;
+    const Z: u32 = 300000;
+    const W: u32 = 40000000;
+
+    let a = UInteger4::new(X, Y, Z, W);
+    let v = load_uinteger4(a);
+    let b = store_uinteger4(v);
+    let c = store_boolean4(v);
+
+    assert!(!c.any(), "invalid load/store operation!");
+    assert_eq!(a.x, b.x, "invalid load/store operation!");
+    assert_eq!(a.y, b.y, "invalid load/store operation!");
+    assert_eq!(a.z, b.z, "invalid load/store operation!");
+    assert_eq!(a.w, b.w, "invalid load/store operation!");
+}
+
+#[test]
 fn vector_add_test() {
     const X: f32 = 1.1234567;
     const Y: f32 = 2.2345678;
