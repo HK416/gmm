@@ -173,6 +173,46 @@ pub fn vector_max(a: Vector, b: Vector) -> Vector {
     unsafe { vmaxq_f32(a, b) }
 }
 
+/// Checks if the elements of two given vectors are less.
+#[inline]
+pub fn vector_lt(a: Vector, b: Vector) -> Boolean4 {
+    unsafe { store_boolean4(vcltq_f32(a, b)) }
+}
+
+/// Checks if the elements of two given vectors are less than or equal.
+#[inline]
+pub fn vector_le(a: Vector, b: Vector) -> Boolean4 {
+    unsafe { store_boolean4(vcleq_f32(a, b)) }
+}
+
+/// Checks if the elements of two given vectors are greater.
+#[inline]
+pub fn vector_gt(a: Vector, b: Vector) -> Boolean4 {
+    unsafe { store_boolean4(vcgtq_f32(a, b)) }
+}
+
+/// Checks if the elements of two given vectors are greater than or equal.
+#[inline]
+pub fn vector_ge(a: Vector, b: Vector) -> Boolean4 {
+    unsafe { store_boolean4(vcgeq_f32(a, b)) }
+}
+
+/// Checks if the elements of two given vectors are equal.
+/// This function does not use [`f32::EPSILON`].
+/// 
+#[inline]
+pub fn vector_eq(a: Vector, b: Vector) -> Boolean4 {
+    unsafe { store_boolean4(vceqq_f32(a, b)) }
+}
+
+/// Checks if the elements of two given vectors are not equal.
+/// This function does not use [`f32::EPSILON`].
+/// 
+#[inline]
+pub fn vector_ne(a: Vector, b: Vector) -> Boolean4 {
+    unsafe { store_boolean4(vmvnq_u32(vceqq_f32(a, b))) }
+}
+
 
 
 /// Length sqared of a two-element vector.
