@@ -296,7 +296,7 @@ pub fn vector2_dot(a: Vector, b: Vector) -> f32 {
     unsafe { 
         let mul = vmul_f32(vget_low_f32(a), vget_low_f32(b));
         let sum = vpadd_f32(mul, mul);
-        vget_lane_f32::<0>(sum)
+        vget_lane_f32::<0x00>(sum)
     }
 }
 
@@ -308,9 +308,9 @@ pub fn vector3_dot(a: Vector, b: Vector) -> f32 {
         let low = vget_low_f32(mul);
         let high = vget_high_f32(mul);
         let v1 = vpadd_f32(low, low);
-        let v2 = vdup_lane_f32::<0>(high);
+        let v2 = vdup_lane_f32::<0x00>(high);
         let sum = vadd_f32(v1, v2);
-        vget_lane_f32::<0>(sum)
+        vget_lane_f32::<0x00>(sum)
     }
 }
 
@@ -324,26 +324,33 @@ pub fn vector4_dot(a: Vector, b: Vector) -> f32 {
         let v1 = vpadd_f32(low, low);
         let v2 = vpadd_f32(high, high);
         let sum = vadd_f32(v1, v2);
-        vget_lane_f32::<0>(sum)
+        vget_lane_f32::<0x00>(sum)
     }
 }
 
 /// Cross product of a three-element vector
 #[inline]
 pub fn vector3_cross(a: Vector, b: Vector) -> Vector {
+    const BIT_MASK: [u32; 4] = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0000000];
     unsafe {
-        const BIT_MASK: [u32; 4] = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x0000000];
+        // a x b = [ay*bz-az*by, az*bx-ax*bz, ax*by-ay*bx]
+        // v0 = { ay, az, ax, -- }
+        // v1 = { bz, bx, by, -- }
+        // v2 = { az, ax, ay, -- }
+        // v3 = { by, bz, bx, -- }
+        // v0*v1-v2*v3
+        //
 
         let a_xy = vget_low_f32(a); // [ax, ay]
-        let a_zz = vdup_lane_f32::<0>(vget_high_f32(a)); // [az, az]
-        let a_zx = vext_f32::<0>(a_zz, a_xy); // [az, ax]
-        let a_yz = vext_f32::<1>(a_xy, a_zz); // [ay, az]
+        let a_zz = vdup_lane_f32::<0x00>(vget_high_f32(a)); // [az, az]
+        let a_zx = vext_f32::<0x01>(a_zz, a_xy); // [az, ax]
+        let a_yz = vext_f32::<0x01>(a_xy, a_zz); // [ay, az]
 
         let b_xy = vget_low_f32(b); // [bx, by]
         let b_yx = vrev64_f32(b_xy); // [by, bx]
-        let b_zz = vdup_lane_f32::<0>(vget_high_f32(b)); // [bz, bz]
-        let b_yz = vext_f32::<0>(b_yx, b_zz); // [by, bz]
-        let b_zx = vext_f32::<0>(b_zz, b_xy); // [bz, bx]
+        let b_zz = vdup_lane_f32::<0x00>(vget_high_f32(b)); // [bz, bz]
+        let b_yz = vext_f32::<0x01>(b_xy, b_zz); // [by, bz]
+        let b_zx = vext_f32::<0x01>(b_zz, b_xy); // [bz, bx]
 
         let result = vmulq_f32(vcombine_f32(a_yz, a_xy), vcombine_f32(b_zx, b_yx)); // [ay*bz, az*bx, ax*by, _]
         let result = vmlsq_f32(result, vcombine_f32(a_zx, a_yz), vcombine_f32(b_yz, b_xy)); // [ay*bz-az*by, az*bx-ax*bz, ax*by-ay*bx, _]
@@ -376,4 +383,52 @@ pub fn vector4_eq(a: Vector, b: Vector) -> bool {
     let diff = vector_sub(a, b);
     let len = vector4_length_sq(diff);
     return len <= f32::EPSILON;
+}
+
+
+
+/// Multiplies two quaternions.
+#[inline]
+pub fn quaternion_mul(a: Vector, b: Vector) -> Vector {
+    unsafe {
+        // x: aw*bx + ax*bw + ay*bz - az*by
+        // y: aw*by - ax*bz + ay*bw + az*bx
+        // z: aw*bz + ax*by - ay*bx + az*bw
+        // w: aw*bw - ax*bx - ay*by - az*bz
+        //
+
+        let b_xy = vget_low_f32(b); // [bx, by]
+        let b_zw = vget_high_f32(b); // [bz, bw]
+        let b_yx = vrev64_f32(b_xy); // [by, bx]
+        let b_wz = vrev64_f32(b_zw); // [bw, bz]
+        
+        let low = b_wz; // [bw, bz]
+        let high = vext_f32::<0x01>(vneg_f32(b_xy), b_xy); // [-by, bx]
+        let i_res = vmulq_f32(a, vcombine_f32(low, high)); // [ax*bw, ay*bz, -az*by, aw*bx]
+        let tmp = vpaddq_f32(i_res, i_res);
+        let i = vpaddq_f32(tmp, tmp);
+
+        let low = vext_f32::<0x01>(vneg_f32(b_wz), b_wz); // [-bz, bw]
+        let high = vext_f32::<0x01>(b_yx, b_yx); // [bx, by]
+        let j_res = vmulq_f32(a, vcombine_f32(low, high)); // [-ax*bz, ay*bw, az*bx, aw*by]
+        let tmp = vpaddq_f32(j_res, j_res);
+        let j = vpaddq_f32(tmp, tmp);
+
+        let low = vext_f32::<0x01>(b_xy, vneg_f32(b_xy)); // [by, -bx]
+        let high = vext_f32::<0x01>(b_zw, b_zw); // [bw, bz]
+        let k_res = vmulq_f32(a, vcombine_f32(low, high)); // [ax*by, -ay*bx, az*bw, aw*bz]
+        let tmp = vpaddq_f32(k_res, k_res);
+        let k = vpaddq_f32(tmp, tmp);
+
+        let low = vneg_f32(b_xy); // [-bx, -by]
+        let high = vext_f32::<0x01>(vneg_f32(b_wz), b_wz); // [-bz, bw]
+        let w_res = vmulq_f32(a, vcombine_f32(low, high)); // [-ax*bx, -ay*by, -az*bz, aw*bw]
+        let tmp = vpaddq_f32(w_res, w_res);
+        let w = vpaddq_f32(tmp, tmp);
+
+        let low = vext_f32::<0x01>(vget_low_f32(i), vget_low_f32(j));
+        let high = vext_f32::<0x01>(vget_low_f32(k), vget_low_f32(w));
+
+        vcombine_f32(low, high)
+    }
 }

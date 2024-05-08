@@ -307,3 +307,32 @@ fn vector3_cross_test_2() {
 
     assert!(vector3_eq(v_res, v_c), "invalid vector3 cross operation! (v_res:{:?}, v_c:{:?})", v_res, v_c);
 }
+
+#[test]
+fn quaternion_test_0() {
+    const AX: f32 = 0.08;
+    const AY: f32 = 0.17;
+    const AZ: f32 = -0.01;
+    const AW: f32 = 0.98;
+
+    const BX: f32 = 0.70;
+    const BY: f32 = 0.00;
+    const BZ: f32 = 0.00;
+    const BW: f32 = 0.70;
+
+    const CX: f32 = 0.742;
+    const CY: f32 = 0.112;
+    const CZ: f32 = -0.126;
+    const CW: f32 = 0.63;
+
+    let qa = Float4::new(AX, AY, AZ, AW);
+    let qb = Float4::new(BX, BY, BZ, BW);
+    let qc = Float4::new(CX, CY, CZ, CW);
+
+    let v_qa = load_float4(qa);
+    let v_qb = load_float4(qb);
+    let v_qc = load_float4(qc);
+    let v_res = quaternion_mul(v_qa, v_qb);
+
+    assert!(vector4_eq(v_res, v_qc), "invalid quaternion mul operation! (v_res:{:?}, v_qc:{:?})", v_res, v_qc);
+}
