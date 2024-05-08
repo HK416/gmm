@@ -1,4 +1,8 @@
 use core::fmt;
+use core::ops;
+
+use super::int3::Integer3;
+use super::int4::Integer4;
 
 /// A structure that stores two-dimensional integer data.
 #[repr(C)]
@@ -48,6 +52,64 @@ impl Integer2 {
     #[inline(always)]
     pub const fn fill(val: i32) -> Self {
         Self { x: val, y: val }
+    }
+}
+
+impl Default for Integer2 {
+    #[inline(always)]
+    fn default() -> Self {
+        Self::ZERO
+    }
+}
+
+impl From<Integer3> for Integer2 {
+    #[inline]
+    fn from(value: Integer3) -> Self {
+        Integer2 { x: value.x, y: value.y }
+    }
+}
+
+impl From<Integer4> for Integer2 {
+    #[inline]
+    fn from(value: Integer4) -> Self {
+        Integer2 { x: value.x, y: value.y }
+    }
+}
+
+impl AsRef<[i32; 2]> for Integer2 {
+    #[inline]
+    fn as_ref(&self) -> &[i32; 2] {
+        unsafe { &*(self as *const Integer2 as *const [i32; 2]) }
+    }
+}
+
+impl AsMut<[i32; 2]> for Integer2 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [i32; 2] {
+        unsafe { &mut *(self as *mut Integer2 as *mut [i32; 2]) }
+    }
+}
+
+impl ops::Index<usize> for Integer2 {
+    type Output = i32;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            _ => panic!("index out of range!"),
+        }
+    }
+}
+
+impl ops::IndexMut<usize> for Integer2 {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            _ => panic!("index out of range!"),
+        }
     }
 }
 
