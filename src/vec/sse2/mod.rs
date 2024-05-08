@@ -10,6 +10,28 @@ use crate::data::*;
 /// This is the data type used in vector operations.
 pub type Vector = __m128;
 
+/// This is the data type used in vector operations.
+pub type VectorU32 = __m128i;
+
+
+
+/// Load vector data from [`Boolean2`].
+#[inline(always)]
+pub fn load_boolean2(src: Boolean2) -> VectorU32 {
+    load_uinteger2(UInteger2::from(src))
+}
+
+/// Load vector data from [`Boolean3`].
+#[inline(always)]
+pub fn load_boolean3(src: Boolean3) -> VectorU32 {
+    load_uinteger3(UInteger3::from(src))
+}
+
+/// Load vector data from [`Boolean4`].
+#[inline(always)]
+pub fn load_boolean4(src: Boolean4) -> VectorU32 {
+    load_uinteger4(UInteger4::from(src))
+}
 
 /// Load vector data from [`Float2`].
 #[inline(always)]
@@ -29,6 +51,42 @@ pub fn load_float4(src: Float4) -> Vector {
     unsafe { _mm_loadu_ps(&src as *const Float4 as *const f32) }
 }
 
+/// Load vector data from [`UInteger2`].
+#[inline(always)]
+pub fn load_uinteger2(src: UInteger2) -> VectorU32 {
+    load_uinteger4(UInteger4::from(src))
+}
+
+/// Load vector data from [`UInteger3`].
+#[inline(always)]
+pub fn load_uinteger3(src: UInteger3) -> VectorU32 {
+    load_uinteger4(UInteger4::from(src))
+}
+
+/// Load vector data from [`UInteger4`].
+#[inline]
+pub fn load_uinteger4(src: UInteger4) -> VectorU32 {
+    unsafe { _mm_loadu_si128(&src as *const UInteger4 as *const __m128i) }
+}
+
+/// Store vector data in [`Boolean2`].
+#[inline(always)]
+pub fn store_boolean2(src: VectorU32) -> Boolean2 {
+    store_uinteger2(src).into()
+}
+
+/// Store vector data in [`Boolean3`].
+#[inline(always)]
+pub fn store_boolean3(src: VectorU32) -> Boolean3 {
+    store_uinteger3(src).into()
+}
+
+/// Store vector data in [`Boolean4`].
+#[inline(always)]
+pub fn store_boolean4(src: VectorU32) -> Boolean4 {
+    store_uinteger4(src).into()
+}
+
 /// Store vector data in [`Float2`].
 #[inline(always)]
 pub fn store_float2(src: Vector) -> Float2 {
@@ -46,6 +104,26 @@ pub fn store_float3(src: Vector) -> Float3 {
 pub fn store_float4(src: Vector) -> Float4 {
     let mut dst = Float4::default();
     unsafe { _mm_storeu_ps(&mut dst as *mut Float4 as *mut f32, src) };
+    dst
+}
+
+/// Store vector data in [`UInteger2`].
+#[inline(always)]
+pub fn store_uinteger2(src: VectorU32) -> UInteger2 {
+    UInteger2::from(store_uinteger4(src))
+}
+
+/// Store vector data in [`UInteger3`].
+#[inline(always)]
+pub fn store_uinteger3(src: VectorU32) -> UInteger3 {
+    UInteger3::from(store_uinteger4(src))
+}
+
+/// Store vector data in [`UInteger4`].
+#[inline]
+pub fn store_uinteger4(src: VectorU32) -> UInteger4 {
+    let mut dst = UInteger4::default();
+    unsafe { _mm_storeu_si128(&mut dst as *mut UInteger4 as *mut __m128i, src) };
     dst
 }
 
@@ -214,6 +292,29 @@ pub fn vector4_dot(a: Vector, b: Vector) -> f32 {
         let high = _mm_shuffle_ps::<0b00_00_00_01>(sum, sum); // y2+w2, --, --, --
         let sum = _mm_add_ps(sum, high); // x2+y2+z2+w2, --, --, --
         _mm_cvtss_f32(sum)
+    }
+}
+
+/// Cross product of a three-element vector
+pub fn vector3_cross(a: Vector, b: Vector) -> Vector {
+    const BIT_MASK: [u32; 4] = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000];
+    unsafe {
+        // a x b = [ay*bz-az*by, az*bx-ax*bz, ax*by-ay*bx]
+        // v0 = { ay, az, ax, -- }
+        // v1 = { bz, bx, by, -- }
+        // v2 = { az, ax, ay, -- }
+        // v3 = { by, bz, bx, -- }
+        // v0*v1-v2*v3
+        //
+
+        let v0 = _mm_shuffle_ps::<0b00_00_10_01>(a, a); // ay, az, ax, --
+        let v1 = _mm_shuffle_ps::<0b00_01_00_10>(b, b); // bz, bx, by, --
+        let v2 = _mm_shuffle_ps::<0b00_01_00_10>(a, a); // az, ax, ay, --
+        let v3 = _mm_shuffle_ps::<0b00_00_10_01>(b, b); // by, bz, bx, --
+        let res = _mm_sub_ps(_mm_mul_ps(v0, v1), _mm_mul_ps(v2, v3));
+
+        let mask = _mm_loadu_ps(&BIT_MASK as *const u32 as *const f32);
+        _mm_and_ps(mask, res)
     }
 }
 

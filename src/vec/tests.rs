@@ -231,7 +231,7 @@ fn vector4_dot_test() {
 }
 
 #[test]
-fn vector3_cross_test() {
+fn vector3_cross_test_0() {
     const AX: f32 = 1.0;
     const AY: f32 = 0.0;
     const AZ: f32 = 0.0;
@@ -240,14 +240,70 @@ fn vector3_cross_test() {
     const BY: f32 = 1.0;
     const BZ: f32 = 0.0;
 
+    const CX: f32 = 0.0;
+    const CY: f32 = 0.0;
+    const CZ: f32 = 1.0;
+
     let a = Float3::new(AX, AY, AZ);
     let b = Float3::new(BX, BY, BZ);
-    let c = Float3::new(AY * BZ - AZ * BY, AX * BZ - AZ * BX, AX * BY - AY * BX);
+    let c = Float3::new(CX, CY, CZ);
 
     let v_a = load_float3(a);
     let v_b = load_float3(b);
     let v_c = load_float3(c);
     let v_res = vector3_cross(v_a, v_b);
 
-    assert!(vector3_eq(v_res, v_c), "invalid vector3 cross operation!");
+    assert!(vector3_eq(v_res, v_c), "invalid vector3 cross operation! (v_res:{:?}, v_c:{:?})", v_res, v_c);
+}
+
+#[test]
+fn vector3_cross_test_1() {
+    const AX: f32 = 1.0;
+    const AY: f32 = 2.0;
+    const AZ: f32 = -2.0;
+
+    const BX: f32 = 3.0;
+    const BY: f32 = 0.0;
+    const BZ: f32 = 1.0;
+
+    const CX: f32 = 2.0;
+    const CY: f32 = -7.0;
+    const CZ: f32 = -6.0;
+
+    let a = Float3::new(AX, AY, AZ);
+    let b = Float3::new(BX, BY, BZ);
+    let c = Float3::new(CX, CY, CZ);
+
+    let v_a = load_float3(a);
+    let v_b = load_float3(b);
+    let v_c = load_float3(c);
+    let v_res = vector3_cross(v_a, v_b);
+
+    assert!(vector3_eq(v_res, v_c), "invalid vector3 cross operation! (v_res:{:?}, v_c:{:?})", v_res, v_c);
+}
+
+#[test]
+fn vector3_cross_test_2() {
+    const AX: f32 = -1.0;
+    const AY: f32 = 1.0;
+    const AZ: f32 = 0.0;
+
+    const BX: f32 = -1.0;
+    const BY: f32 = 0.0;
+    const BZ: f32 = 1.0;
+
+    const CX: f32 = 1.0;
+    const CY: f32 = 1.0;
+    const CZ: f32 = 1.0;
+
+    let a = Float3::new(AX, AY, AZ);
+    let b = Float3::new(BX, BY, BZ);
+    let c = Float3::new(CX, CY, CZ);
+
+    let v_a = load_float3(a);
+    let v_b = load_float3(b);
+    let v_c = load_float3(c);
+    let v_res = vector3_cross(v_a, v_b);
+
+    assert!(vector3_eq(v_res, v_c), "invalid vector3 cross operation! (v_res:{:?}, v_c:{:?})", v_res, v_c);
 }
