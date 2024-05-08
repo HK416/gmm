@@ -1,4 +1,8 @@
 use core::fmt;
+use core::ops;
+
+use super::int2::Integer2;
+use super::int3::Integer3;
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -61,6 +65,68 @@ impl Integer4 {
     #[inline(always)]
     pub const fn fill(val: i32) -> Self {
         Self { x: val, y: val, z: val, w: val }
+    }
+}
+
+impl Default for Integer4 {
+    #[inline(always)]
+    fn default() -> Self {
+        Self::ZERO
+    }
+}
+
+impl From<Integer2> for Integer4 {
+    #[inline]
+    fn from(value: Integer2) -> Self {
+        Integer4 { x: value.x, y: value.y, z: 0, w: 0 }
+    }
+} 
+
+impl From<Integer3> for Integer4 {
+    #[inline]
+    fn from(value: Integer3) -> Self {
+        Integer4 { x: value.x, y: value.y, z: value.z, w: 0 }
+    }
+}
+
+impl AsRef<[i32; 4]> for Integer4 {
+    #[inline]
+    fn as_ref(&self) -> &[i32; 4] {
+        unsafe { &*(self as *const Integer4 as *const [i32; 4]) }
+    }
+}
+
+impl AsMut<[i32; 4]> for Integer4 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [i32; 4] {
+        unsafe { &mut *(self as *mut Integer4 as *mut [i32; 4]) }
+    }
+}
+
+impl ops::Index<usize> for Integer4 {
+    type Output = i32;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            3 => &self.w,
+            _ => panic!("index out of range!"),
+        }
+    }
+}
+
+impl ops::IndexMut<usize> for Integer4 {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            3 => &mut self.w,
+            _ => panic!("index out of range!"),
+        }
     }
 }
 
