@@ -55,6 +55,149 @@ impl Integer2 {
     }
 }
 
+// Vector swizzle code implementation.
+impl Integer2 {
+    #[inline]
+    pub const fn xx(self) -> Integer2 {
+        Integer2 { x: self.x, y: self.x }
+    }
+
+    #[inline]
+    pub const fn xy(self) -> Integer2 {
+        Integer2 { x: self.x, y: self.y }
+    }
+
+    #[inline]
+    pub const fn yx(self) -> Integer2 {
+        Integer2 { x: self.y, y: self.x }
+    }
+
+    #[inline]
+    pub const fn yy(self) -> Integer2 {
+        Integer2 { x: self.y, y: self.y }
+    }
+
+    #[inline]
+    pub const fn xxx(self) -> Integer3 {
+        Integer3 { x: self.x, y: self.x, z: self.x }
+    }
+
+    #[inline]
+    pub const fn xxy(self) -> Integer3 {
+        Integer3 { x: self.x, y: self.x, z: self.y }
+    }
+
+    #[inline]
+    pub const fn xyx(self) -> Integer3 {
+        Integer3 { x: self.x, y: self.y, z: self.x }
+    }
+
+    #[inline]
+    pub const fn xyy(self) -> Integer3 {
+        Integer3 { x: self.x, y: self.y, z: self.y }
+    }
+
+    #[inline]
+    pub const fn yxx(self) -> Integer3 {
+        Integer3 { x: self.y, y: self.x, z: self.x }
+    }
+
+    #[inline]
+    pub const fn yxy(self) -> Integer3 {
+        Integer3 { x: self.y, y: self.x, z: self.y }
+    }
+
+    #[inline]
+    pub const fn yyx(self) -> Integer3 {
+        Integer3 { x: self.y, y: self.y, z: self.x }
+    }
+
+    #[inline]
+    pub const fn yyy(self) -> Integer3 {
+        Integer3 { x: self.y, y: self.y, z: self.y }
+    }
+
+    #[inline]
+    pub const fn xxxx(self) -> Integer4 {
+        Integer4 { x: self.x, y: self.x, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xxxy(self) -> Integer4 {
+        Integer4 { x: self.x, y: self.x, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xxyx(self) -> Integer4 {
+        Integer4 { x: self.x, y: self.x, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xxyy(self) -> Integer4 {
+        Integer4 { x: self.x, y: self.x, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xyxx(self) -> Integer4 {
+        Integer4 { x: self.x, y: self.y, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xyxy(self) -> Integer4 {
+        Integer4 { x: self.x, y: self.y, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn xyyx(self) -> Integer4 {
+        Integer4 { x: self.x, y: self.y, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn xyyy(self) -> Integer4 {
+        Integer4 { x: self.x, y: self.y, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yxxx(self) -> Integer4 {
+        Integer4 { x: self.y, y: self.x, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yxxy(self) -> Integer4 {
+        Integer4 { x: self.y, y: self.x, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yxyx(self) -> Integer4 {
+        Integer4 { x: self.y, y: self.x, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yxyy(self) -> Integer4 {
+        Integer4 { x: self.y, y: self.x, z: self.y, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yyxx(self) -> Integer4 {
+        Integer4 { x: self.y, y: self.y, z: self.x, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yyxy(self) -> Integer4 {
+        Integer4 { x: self.y, y: self.y, z: self.x, w: self.y }
+    }
+
+    #[inline]
+    pub const fn yyyx(self) -> Integer4 {
+        Integer4 { x: self.y, y: self.y, z: self.y, w: self.x }
+    }
+
+    #[inline]
+    pub const fn yyyy(self) -> Integer4 {
+        Integer4 { x: self.y, y: self.y, z: self.y, w: self.y }
+    }
+}
+
 impl Default for Integer2 {
     #[inline(always)]
     fn default() -> Self {
