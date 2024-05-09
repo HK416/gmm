@@ -387,6 +387,12 @@ pub fn vector4_eq(a: Vector, b: Vector) -> bool {
 
 
 
+/// Dot product of a two quaternions.
+#[inline(always)]
+pub fn quaternion_dot(a: Vector, b: Vector) -> f32 {
+    vector4_dot(a, b)
+}
+
 /// Multiplies two quaternions.
 #[inline]
 pub fn quaternion_mul(a: Vector, b: Vector) -> Vector {
@@ -431,4 +437,41 @@ pub fn quaternion_mul(a: Vector, b: Vector) -> Vector {
 
         vcombine_f32(low, high)
     }
+}
+
+/// Length sqared of a quaternion.
+#[inline(always)]
+pub fn quaternion_length_sq(q: Vector) -> f32 {
+    vector4_length_sq(q)
+}
+
+/// Length of a quaternion.
+#[inline(always)]
+pub fn quaternion_length(q: Vector) -> f32 {
+    vector4_length(q)
+}
+
+/// Normalizes a given quaternion. 
+/// If normalization fails, `None` is returned.
+#[inline(always)]
+pub fn quaternion_normalize(q: Vector) -> Option<Vector> {
+    vector4_normalize(q)
+}
+
+/// Returns the conjugate of the quaternion.
+#[inline]
+pub fn quaternion_conjugate(q: Vector) -> Vector {
+    const NEG: [f32; 4] = [-1.0, -1.0, -1.0, 1.0];
+    unsafe {
+        let neg = vld1q_f32(&NEG as *const f32);
+        vmulq_f32(neg, q)
+    }
+}
+
+/// Returns the inverse of the quaternion. 
+/// If normalization fails, `None` is returned.
+#[inline]
+pub fn quaternion_inverse(q: Vector) -> Option<Vector> {
+    quaternion_normalize(q)
+        .map(|q| quaternion_conjugate(q))
 }
