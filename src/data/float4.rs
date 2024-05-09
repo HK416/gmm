@@ -2,6 +2,7 @@ use core::fmt;
 use core::ops;
 use core::f32;
 
+use super::bool4::Boolean4;
 use super::float2::Float2;
 use super::float3::Float3;
 
@@ -76,6 +77,28 @@ impl Float4 {
     #[inline(always)]
     pub const fn fill(val: f32) -> Self {
         Self { x: val, y: val, z: val, w: val }
+    }
+
+    /// Returns `true` if at least one element of the vector is [`f32::NAN`].
+    #[inline]
+    pub fn is_nan(&self) -> bool {
+        Boolean4 {
+            x: self.x.is_nan(),
+            y: self.y.is_nan(),
+            z: self.z.is_nan(),
+            w: self.w.is_nan(),
+        }.any()
+    }
+
+    /// Returns `true` if at least one element of the vector is [`f32::INFINITY`].
+    #[inline]
+    pub fn is_infinite(&self) -> bool {
+        Boolean4 {
+            x: self.x.is_infinite(),
+            y: self.y.is_infinite(),
+            z: self.z.is_infinite(),
+            w: self.w.is_infinite(),
+        }.any()
     }
 }
 
