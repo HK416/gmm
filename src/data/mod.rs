@@ -16,6 +16,9 @@ pub use self::float3::*;
 pub mod float4;
 pub use self::float4::*;
 
+pub mod float4x4;
+pub use self::float4x4::*;
+
 pub mod int2;
 pub use self::int2::*;
 
