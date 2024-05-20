@@ -1,6 +1,7 @@
 use core::fmt;
 
 use super::bool4::Boolean4;
+use super::float3x3::Float3x3;
 use super::float4::Float4;
 
 /// A structure that stores 4x4 column major matrix data.
@@ -47,6 +48,39 @@ impl Float4x4 {
             z: self.z_axis.is_infinite(),
             w: self.w_axis.is_infinite()
         }.any()
+    }
+}
+
+impl Default for Float4x4 {
+    #[inline(always)]
+    fn default() -> Self {
+        Self::IDENTITY
+    }
+}
+
+impl From<Float3x3> for Float4x4 {
+    #[inline]
+    fn from(value: Float3x3) -> Self {
+        Self { 
+            x_axis: Float4::from(value.x_axis), 
+            y_axis: Float4::from(value.y_axis), 
+            z_axis: Float4::from(value.z_axis), 
+            w_axis: Float4::W 
+        }
+    }
+}
+
+impl AsRef<[f32; 16]> for Float4x4 {
+    #[inline]
+    fn as_ref(&self) -> &[f32; 16] {
+        unsafe { &*(self as *const Self as *const [f32; 16]) }
+    }
+}
+
+impl AsMut<[f32; 16]> for Float4x4 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [f32; 16] {
+        unsafe { &mut *(self as *mut Self as *mut [f32; 16]) }
     }
 }
 
