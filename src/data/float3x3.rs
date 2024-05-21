@@ -2,6 +2,7 @@ use core::fmt;
 
 use super::bool3::Boolean3;
 use super::float3::Float3;
+use super::float4x4::Float4x4;
 
 /// A structure that stores 3x3 column major matrix data.
 #[repr(C)]
@@ -44,6 +45,38 @@ impl Float3x3 {
             y: self.y_axis.is_infinite(),
             z: self.z_axis.is_infinite()
         }.any()
+    }
+}
+
+impl Default for Float3x3 {
+    #[inline(always)]
+    fn default() -> Self {
+        Self::IDENTITY
+    }
+}
+
+impl From<Float4x4> for Float3x3 {
+    #[inline]
+    fn from(value: Float4x4) -> Self {
+        Float3x3 { 
+            x_axis: Float3::from(value.x_axis), 
+            y_axis: Float3::from(value.y_axis),
+            z_axis: Float3::from(value.z_axis) 
+        }
+    }
+}
+
+impl AsRef<[f32; 9]> for Float3x3 {
+    #[inline]
+    fn as_ref(&self) -> &[f32; 9] {
+        unsafe { &*(self as *const Self as *const [f32; 9]) }
+    }
+}
+
+impl AsMut<[f32; 9]> for Float3x3 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [f32; 9] {
+        unsafe { &mut *(self as *mut Self as *mut [f32; 9]) }
     }
 }
 
