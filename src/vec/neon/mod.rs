@@ -9,6 +9,8 @@ pub type Vector = float32x4_t;
 /// This is the data type used in vector operations.
 pub type VectorU32 = uint32x4_t;
 
+/// This is the data type used in matrix operations.
+pub type MATRIX = [float32x4_t; 4];
 
 
 /// Load vector data from [`Boolean2`].
@@ -45,6 +47,23 @@ pub fn load_float3(src: Float3) -> Vector {
 #[inline]
 pub fn load_float4(src: Float4) -> Vector {
     unsafe { vld1q_f32(&src as *const Float4 as *const f32) }
+}
+
+/// Load matrix data from [`Float3x3`].
+#[inline(always)]
+pub fn load_float3x3(src: Float3x3) -> MATRIX {
+    load_float4x4(Float4x4::from(src))
+}
+
+/// Load matrix data from [`Float4x4`].
+#[inline(always)]
+pub fn load_float4x4(src: Float4x4) -> MATRIX {
+    [
+        load_float4(src.x_axis), 
+        load_float4(src.y_axis), 
+        load_float4(src.z_axis), 
+        load_float4(src.w_axis)
+    ]
 }
 
 /// Load vector data from [`UInteger2`].
@@ -101,6 +120,23 @@ pub fn store_float4(src: Vector) -> Float4 {
     let mut dst = Float4::default();
     unsafe { vst1q_f32(&mut dst as *mut Float4 as *mut f32, src) };
     dst
+}
+
+/// Store matrix data in [`Float3x3`].
+#[inline(always)]
+pub fn store_float3x3(src: MATRIX) -> Float3x3 {
+    Float3x3::from(store_float4x4(src))
+}
+
+/// Store matrix data in [`Float4x4`].
+#[inline(always)]
+pub fn store_float4x4(src: MATRIX) -> Float4x4 {
+    Float4x4 { 
+        x_axis: store_float4(src[0]), 
+        y_axis: store_float4(src[1]), 
+        z_axis: store_float4(src[2]), 
+        w_axis: store_float4(src[3]) 
+    }
 }
 
 /// Store vector data in [`UInteger2`].

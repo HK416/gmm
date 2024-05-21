@@ -21,6 +21,38 @@ fn vector_load_store_test() {
 }
 
 #[test]
+fn matrix_load_store_test() {
+    const ELEMENTS: [f32; 16] = [
+        103.75782485548567, 
+        73.89488159306876, 
+        15.930446704662302, 
+        -12.434618265668846, 
+        -77.32049114915367, 
+        46.031410186407896, 
+        69.89353173722401, 
+        -39.16914668039783, 
+        68.14968983215715, 
+        -19.71285306631725, 
+        -120.46870508215576, 
+        -34.357817359740366, 
+        -94.05212950646396, 
+        4.609474069712377, 
+        -75.30518158135038, 
+        99.87223603758153
+    ];
+
+    let a = Float4x4::from_array(&ELEMENTS);
+    let m = load_float4x4(a);
+    let b = store_float4x4(m);
+
+    let a_arr = a.as_ref();
+    let b_arr = b.as_ref();
+    for idx in 0..16 {
+        assert!((a_arr[idx] - b_arr[idx]).abs() <= f32::EPSILON, "invalid load/store operation!");
+    }
+}
+
+#[test]
 fn vectoru32_load_store_test() {
     const X: u32 = 10;
     const Y: u32 = 2000;
