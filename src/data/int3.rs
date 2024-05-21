@@ -59,6 +59,18 @@ impl Integer3 {
     pub const fn fill(val: i32) -> Self {
         Self { x: val, y: val, z: val }
     }
+
+    /// Creates with given array.
+    /// 
+    /// # Panics
+    /// If the length of the given array is less than the number of elements in the vector,
+    /// an index out of range error occurs.
+    /// 
+    #[must_use]
+    #[inline(always)]
+    pub fn from_array(arr: &[i32]) -> Self {
+        Self { x: arr[0], y: arr[1], z: arr[2] }
+    }
 }
 
 // Vector swizzle code implementation.

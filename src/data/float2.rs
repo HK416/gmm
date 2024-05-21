@@ -65,6 +65,18 @@ impl Float2 {
         Self { x: val, y: val }
     }
 
+    /// Creates with given array.
+    /// 
+    /// # Panics
+    /// If the length of the given array is less than the number of elements in the vector,
+    /// an index out of range error occurs.
+    /// 
+    #[must_use]
+    #[inline(always)]
+    pub fn from_array(arr: &[f32]) -> Self {
+        Self { x: arr[0], y: arr[1] }
+    }
+
     /// Returns `true` if at least one element of the vector is [`f32::NAN`].
     #[inline]
     pub fn is_nan(&self) -> bool {

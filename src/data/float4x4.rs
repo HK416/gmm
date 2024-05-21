@@ -28,6 +28,23 @@ impl Float4x4 {
         Self { x_axis, y_axis, z_axis, w_axis }
     }
 
+    /// Creates with given array.
+    /// 
+    /// # Panics
+    /// If the length of the given array is less than the number of elements in the matrix,
+    /// an index out of range error occurs.
+    /// 
+    #[must_use]
+    #[inline(always)]
+    pub fn from_array(arr: &[f32]) -> Self {
+        Self { 
+            x_axis: Float4::from_array(&arr[0..4]), 
+            y_axis: Float4::from_array(&arr[4..8]), 
+            z_axis: Float4::from_array(&arr[8..12]), 
+            w_axis: Float4::from_array(&arr[12..16]) 
+        }
+    }
+
     /// Returns `true` if at least one element of the matrix is [`f32::NAN`].
     #[inline]
     pub fn is_nan(&self) -> bool {

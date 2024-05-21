@@ -36,16 +36,30 @@ impl UInteger3 {
     /// All elements are [`u32::MAX`].
     pub const MAX: Self = Self::fill(u32::MAX);
 
+    /// Creates with given elements.
     #[must_use]
     #[inline(always)]
     pub const fn new(x: u32, y: u32, z: u32) -> Self {
         Self { x, y, z }
     }
 
+    /// Fills all elements with the given values.
     #[must_use]
     #[inline(always)]
     pub const fn fill(val: u32) -> Self {
         Self { x: val, y: val, z: val }
+    }
+
+    /// Creates with given array.
+    /// 
+    /// # Panics
+    /// If the length of the given array is less than the number of elements in the vector,
+    /// an index out of range error occurs.
+    /// 
+    #[must_use]
+    #[inline(always)]
+    pub fn from_array(arr: &[u32]) -> Self {
+        Self { x: arr[0], y: arr[1], z: arr[2] }
     }
 }
 
