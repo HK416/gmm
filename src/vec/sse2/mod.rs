@@ -13,6 +13,9 @@ pub type Vector = __m128;
 /// This is the data type used in vector operations.
 pub type VectorU32 = __m128i;
 
+/// This is the data type used in matrix operation.
+pub type MATRIX = [__m128; 4];
+
 
 
 /// Load vector data from [`Boolean2`].
@@ -49,6 +52,23 @@ pub fn load_float3(src: Float3) -> Vector {
 #[inline]
 pub fn load_float4(src: Float4) -> Vector {
     unsafe { _mm_loadu_ps(&src as *const Float4 as *const f32) }
+}
+
+/// Load matrix data from [`Float3x3`].
+#[inline(always)]
+pub fn load_float3x3(src: Float3x3) -> MATRIX {
+    load_float4x4(Float4x4::from(src))
+}
+
+/// Load matrix data from [`Float4x4`].
+#[inline(always)]
+pub fn load_float4x4(src: Float4x4) -> MATRIX {
+    [
+        load_float4(src.x_axis), 
+        load_float4(src.y_axis), 
+        load_float4(src.z_axis), 
+        load_float4(src.w_axis)
+    ]
 }
 
 /// Load vector data from [`UInteger2`].
@@ -105,6 +125,23 @@ pub fn store_float4(src: Vector) -> Float4 {
     let mut dst = Float4::default();
     unsafe { _mm_storeu_ps(&mut dst as *mut Float4 as *mut f32, src) };
     dst
+}
+
+/// Store matrix data in [`Float3x3`].
+#[inline(always)]
+pub fn store_float3x3(src: MATRIX) -> Float3x3 {
+    Float3x3::from(store_float4x4(src))
+}
+
+/// Store matrix data in [`Float4x4`].
+#[inline(always)]
+pub fn store_float4x4(src: MATRIX) -> Float4x4 {
+    Float4x4 { 
+        x_axis: store_float4(src[0]), 
+        y_axis: store_float4(src[1]), 
+        z_axis: store_float4(src[2]), 
+        w_axis: store_float4(src[3]) 
+    }
 }
 
 /// Store vector data in [`UInteger2`].
@@ -343,4 +380,107 @@ pub fn vector4_eq(a: Vector, b: Vector) -> bool {
     let diff = vector_sub(a, b);
     let len = vector4_length_sq(diff);
     return len <= f32::EPSILON;
+}
+
+
+
+/// Dot product of a two quaternions.
+#[inline(always)]
+pub fn quaternion_dot(a: Vector, b: Vector) -> f32 {
+    vector4_dot(a, b)
+}
+
+/// Multiplies two quaternions.
+#[inline]
+pub fn quaternion_mul(a: Vector, b: Vector) -> Vector {
+    unsafe {
+        // x: aw*bx + ax*bw + ay*bz - az*by
+        // y: aw*by - ax*bz + ay*bw + az*bx
+        // z: aw*bz + ax*by - ay*bx + az*bw
+        // w: aw*bw - ax*bx - ay*by - az*bz
+        //
+        let b_neg = vector_neg(b); // [-bx, -by, -bz, -bw]
+        
+        let temp = _mm_shuffle_ps::<0b_00_01_00_01>(b_neg, b); // [-by, -bx, by, bx]
+        let temp = _mm_shuffle_ps::<0b_11_00_10_11>(b, temp); // [bw, bz, -by, bx]
+        let i_res = _mm_mul_ps(a, temp); // [ax*bw, ay*bz, -az*by, aw*bx]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(i_res, i_res); // [ax*bw, ay*bz, ax*bw, ay*bz]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(i_res, i_res); // [-az*by, aw*bx, -az*by, aw*bx]
+        let i_res = _mm_add_ps(low, high); // [ax*bw-az*by, ay*bz+aw*bx, ax*bw-az*by, ay*bz+aw*bx]
+        let low = _mm_shuffle_ps::<0b_00_00_00_00>(i_res, i_res); // [ax*bw-az*by, ...]
+        let high = _mm_shuffle_ps::<0b_01_01_01_01>(i_res, i_res); // [ay*bz+aw*bx, ...]
+        let i = _mm_add_ps(low, high); // [ax*bw+ay*bz-az*by+aw*bx, ...]
+
+        let temp = _mm_shuffle_ps::<0b_11_10_11_10>(b_neg, b); // [-bz, -bw, bz, bw]
+        let temp = _mm_shuffle_ps::<0b_01_00_11_00>(temp, b); // [-bz, bw, bx, by]
+        let j_res = _mm_mul_ps(a, temp); // [-ax*bz, ay*bw, az*bx, aw*by]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(j_res, j_res); // [-ax*bz, ay*bw, -ax*bz, ay*bw]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(j_res, j_res); // [az*bx, aw*by, az*bx, aw*by]
+        let j_res = _mm_add_ps(low, high); // [az*bx-ax*bz, ay*bw+aw*by, az*bx-ax*bz, ay*bw+aw*by]
+        let low = _mm_shuffle_ps::<0b_00_00_00_00>(j_res, j_res); // [az*bx-ax*bz, ...]
+        let high = _mm_shuffle_ps::<0b_01_01_01_01>(j_res, j_res); // [ay*bw+aw*by, ...]
+        let j = _mm_add_ps(low, high); // [-ax*bz+ay*bw+az*bx+aw*by, ...]
+
+        let temp = _mm_shuffle_ps::<0b_00_01_00_10>(b_neg, b); // [-by, -bx, by, bx]
+        let temp = _mm_shuffle_ps::<0b_10_11_01_10>(temp, b); // [by, -bx, bw, bz]
+        let k_res = _mm_mul_ps(a, temp); // [ax*by, -ay*bx, az*bw, aw*bz]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(k_res, k_res); // [ax*by, -ay*bx, ax*by, -ay*bx]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(k_res, k_res); // [az*bw, aw*bz, az*bw, aw*bz]
+        let k_res = _mm_add_ps(low, high); // [ax*by+az*bw, -ay*bx+aw*bz, ax*by+az*bw, -ay*bx+aw*bz]
+        let low = _mm_shuffle_ps::<0b_00_00_00_00>(k_res, k_res); // [ax*by+az*bw, ...]
+        let high = _mm_shuffle_ps::<0b_01_01_01_01>(k_res, k_res); // [-ay*bx+aw*bz, ...]
+        let k = _mm_add_ps(low, high); // ax*by-ay*bx+az*bw+aw*bz, ...]
+
+
+        let temp = _mm_shuffle_ps::<0b_11_10_11_10>(b_neg, b); // [-bz, -bw, bz, bw]
+        let temp = _mm_shuffle_ps::<0b_11_00_01_00>(b_neg, temp); // [-bx, -by, -bz, bw]
+        let w_res = _mm_mul_ps(a, temp); // [-ax*bx, -ay*by, -az*bz, aw*bw]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(w_res, w_res); // [-ax*bx, -ay*by, -ax*bx, -ay*by]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(w_res, w_res); // [-az*bz, aw*bw, -az*bz, aw*bw]
+        let w_res = _mm_add_ps(low, high); // [-ax*bx-az*bz, -ay*by+aw*bw, -ax*bx-az*bz, -ay*by+aw*bw]
+        let low = _mm_shuffle_ps::<0b_00_00_00_00>(w_res, w_res); // [-ax*bx-az*bz, ...]
+        let high = _mm_shuffle_ps::<0b_01_01_01_01>(w_res, w_res); // [-ay*by+aw*bw, ...]
+        let w = _mm_add_ps(low, high); // aw*bw-ax*bx-ay*by-az*bz, ...]
+
+        let low = _mm_shuffle_ps::<0b_00_00_00_00>(i, j); // [i, i, j, j]
+        let high = _mm_shuffle_ps::<0b_00_00_00_00>(k, w); // [k, k, w, w]
+        _mm_shuffle_ps::<0b_10_00_10_00>(low, high) // [i, j, k, w]
+    }
+}
+
+/// Length sqared of a quaternion.
+#[inline(always)]
+pub fn quaternion_length_sq(q: Vector) -> f32 {
+    vector4_length_sq(q)
+}
+
+/// Length of a quaternion.
+#[inline(always)]
+pub fn quaternion_length(q: Vector) -> f32 {
+    vector4_length(q)
+}
+
+/// Normalizes a given quaternion. 
+/// If normalization fails, `None` is returned.
+#[inline(always)]
+pub fn quaternion_normalize(q: Vector) -> Option<Vector> {
+    vector4_normalize(q)
+}
+
+/// Returns the conjugate of the quaternion.
+#[inline]
+pub fn quaternion_conjugate(q: Vector) -> Vector {
+    const NEG: [f32; 4] = [-1.0, -1.0, -1.0, 1.0];
+    unsafe {
+        let neg = _mm_load_ps(&NEG as *const f32);
+        _mm_mul_ps(neg, q)
+    }
+}
+
+/// Returns the inverse of the quaternion. 
+/// If normalization fails, `None` is returned.
+#[inline]
+pub fn quaternion_inverse(q: Vector) -> Option<Vector> {
+    quaternion_normalize(q)
+        .map(|q| quaternion_conjugate(q))
 }
