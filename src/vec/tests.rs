@@ -1,6 +1,16 @@
 use core::f32;
+use rand::Rng;
+
 use crate::prelude::*;
 
+/// Some SIMD instructions do not conform to IEEE-754. (for performance benefits)
+/// 
+/// So we compare using a separate Epsilon constant.
+/// 
+const EPSILON: f32 = 1.192092896e-6;
+
+/// Verification number of tests
+const NUM_TEST: usize = 1_000_000;
 
 
 #[test]
@@ -14,10 +24,10 @@ fn vector_load_store_test() {
     let v = load_float4(a);
     let b = store_float4(v);
 
-    assert!((a.x - b.x).abs() <= f32::EPSILON, "invalid load/store operation!");
-    assert!((a.y - b.y).abs() <= f32::EPSILON, "invalid load/store operation!");
-    assert!((a.z - b.z).abs() <= f32::EPSILON, "invalid load/store operation!");
-    assert!((a.w - b.w).abs() <= f32::EPSILON, "invalid load/store operation!");
+    assert!((a.x - b.x).abs() <= EPSILON, "invalid load/store operation!");
+    assert!((a.y - b.y).abs() <= EPSILON, "invalid load/store operation!");
+    assert!((a.z - b.z).abs() <= EPSILON, "invalid load/store operation!");
+    assert!((a.w - b.w).abs() <= EPSILON, "invalid load/store operation!");
 }
 
 #[test]
@@ -73,321 +83,375 @@ fn vectoru32_load_store_test() {
 
 #[test]
 fn vector_add_test() {
-    const X: f32 = 1.1234567;
-    const Y: f32 = 2.2345678;
-    const Z: f32 = 3.3456789;
-    const W: f32 = 4.4567890;
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let a_arr: [f32; 4] = rng.gen();
+        let b_arr: [f32; 4] = rng.gen();
 
-    const VAL: f32 = 3.141592;
-
-    let a = Float4::new(X, Y, Z, W);
-    let b = Float4::fill(VAL);
-    let c = Float4::new(X + VAL, Y + VAL, Z + VAL, W + VAL);
-
-    let v_a = load_float4(a);
-    let v_b = load_float4(b);
-    let v_c = load_float4(c);
-    let v_res = vector_add(v_a, v_b);
+        
+        let a = Float4::from_array(&a_arr);
+        let b = Float4::from_array(&b_arr);
+        let v_a = load_float4(a);
+        let v_b = load_float4(b);
+        let v_res = vector_add(v_a, v_b);
+        let res = store_float4(v_res);
     
-    assert!(vector4_eq(v_res, v_c), "invalid add operation!");
+        let g_a = glam::Vec4::from_array(a_arr);
+        let g_b = glam::Vec4::from_array(b_arr);
+        let g_res = g_a + g_b;
+    
+        let raw_res = res.as_ref();
+        let raw_g_res = g_res.as_ref();
+        for idx in 0..4 {
+            let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+            assert!(validate, "invalid add operation (test:{}, this:{}, glam:{})", test, res, g_res);
+        }
+    }
 }
 
 #[test]
 fn vector_sub_test() {
-    const X: f32 = 1.1234567;
-    const Y: f32 = 2.2345678;
-    const Z: f32 = 3.3456789;
-    const W: f32 = 4.4567890;
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let a_arr: [f32; 4] = rng.gen();
+        let b_arr: [f32; 4] = rng.gen();
 
-    const VAL: f32 = 3.141592;
-
-    let a = Float4::new(X, Y, Z, W);
-    let b = Float4::fill(VAL);
-    let c = Float4::new(X - VAL, Y - VAL, Z - VAL, W - VAL);
-
-    let v_a = load_float4(a);
-    let v_b = load_float4(b);
-    let v_c = load_float4(c);
-    let v_res = vector_sub(v_a, v_b);
-
-    assert!(vector4_eq(v_res, v_c), "invalid sub operation!");
+        
+        let a = Float4::from_array(&a_arr);
+        let b = Float4::from_array(&b_arr);
+        let v_a = load_float4(a);
+        let v_b = load_float4(b);
+        let v_res = vector_sub(v_a, v_b);
+        let res = store_float4(v_res);
+    
+        let g_a = glam::Vec4::from_array(a_arr);
+        let g_b = glam::Vec4::from_array(b_arr);
+        let g_res = g_a - g_b;
+    
+        let raw_res = res.as_ref();
+        let raw_g_res = g_res.as_ref();
+        for idx in 0..4 {
+            let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+            assert!(validate, "invalid sub operation (test:{}, this:{}, glam:{})", test, res, g_res);
+        }
+    }
 }
 
 #[test]
 fn vector_mul_test() {
-    const X: f32 = 1.1234567;
-    const Y: f32 = 2.2345678;
-    const Z: f32 = 3.3456789;
-    const W: f32 = 4.4567890;
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let a_arr: [f32; 4] = rng.gen();
+        let b_arr: [f32; 4] = rng.gen();
 
-    const VAL: f32 = 3.141592;
+        
+        let a = Float4::from_array(&a_arr);
+        let b = Float4::from_array(&b_arr);
+        let v_a = load_float4(a);
+        let v_b = load_float4(b);
+        let v_res = vector_mul(v_a, v_b);
+        let res = store_float4(v_res);
     
-    let a = Float4::new(X, Y, Z, W);
-    let b = Float4::fill(VAL);
-    let c = Float4::new(X * VAL, Y * VAL, Z * VAL, W * VAL);
-
-    let v_a = load_float4(a);
-    let v_b = load_float4(b);
-    let v_c = load_float4(c);
-    let v_res = vector_mul(v_a, v_b);
-
-    assert!(vector4_eq(v_res, v_c), "invalid mul operation!");
+        let g_a = glam::Vec4::from_array(a_arr);
+        let g_b = glam::Vec4::from_array(b_arr);
+        let g_res = g_a * g_b;
+    
+        let raw_res = res.as_ref();
+        let raw_g_res = g_res.as_ref();
+        for idx in 0..4 {
+            let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+            assert!(validate, "invalid mul operation (test:{}, this:{}, glam:{})", test, res, g_res);
+        }
+    }
 }
 
 #[test]
 fn vector_div_test() {
-    const X: f32 = 1.1234567;
-    const Y: f32 = 2.2345678;
-    const Z: f32 = 3.3456789;
-    const W: f32 = 4.4567890;
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let a_arr: [f32; 4] = rng.gen();
+        let b_val: f32 = rng.gen_range(0.001..f32::MAX);
 
-    const VAL: f32 = 3.141592;
+        
+        let a = Float4::from_array(&a_arr);
+        let b = Float4::fill(b_val);
+        let v_a = load_float4(a);
+        let v_b = load_float4(b);
+        let v_res = vector_div(v_a, v_b);
+        let res = store_float4(v_res);
     
-    let a = Float4::new(X, Y, Z, W);
-    let b = Float4::fill(VAL);
-    let c = Float4::new(X / VAL, Y / VAL, Z / VAL, W / VAL);
-
-    let v_a = load_float4(a);
-    let v_b = load_float4(b);
-    let v_c = load_float4(c);
-    let v_res = vector_div(v_a, v_b);
-
-    assert!(vector4_eq(v_res, v_c), "invalid div operation!");
+        let g_a = glam::Vec4::from_array(a_arr);
+        let g_b = glam::Vec4::splat(b_val);
+        let g_res = g_a / g_b;
+    
+        let raw_res = res.as_ref();
+        let raw_g_res = g_res.as_ref();
+        for idx in 0..4 {
+            let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+            assert!(validate, "invalid add operation (test:{}, this:{}, glam:{})", test, res, g_res);
+        }
+    }
 }
 
 #[test]
 fn vector_neg_test() {
-    const X: f32 = 1.1234567;
-    const Y: f32 = 2.2345678;
-    const Z: f32 = 3.3456789;
-    const W: f32 = 4.4567890;
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let arr: [f32; 4] = rng.gen();
 
-    let a = Float4::new(X, Y, Z, W);
-    let b = Float4::new(-X, -Y, -Z, -W);
-
-    let v_a = load_float4(a);
-    let v_b = load_float4(b);
-    let v_res = vector_neg(v_a);
-
-    assert!(vector4_eq(v_res, v_b), "invalid negative operation!");
+        let a = Float4::from_array(&arr);
+        let v_a = load_float4(a);
+        let v_res = vector_neg(v_a);
+        let res = store_float4(v_res);
+    
+        let g_a = glam::Vec4::from_array(arr);
+        let g_res = -g_a;
+    
+        let raw_res = res.as_ref();
+        let raw_g_res = g_res.as_ref();
+        for idx in 0..4 {
+            let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+            assert!(validate, "invalid neg operation (test:{}, this:{}, glam:{})", test, res, g_res);
+        }
+    }
 }
 
 #[test]
 fn vector_min_test() {
-    const X: f32 = 1.1234567;
-    const Y: f32 = 2.2345678;
-    const Z: f32 = 3.3456789;
-    const W: f32 = 4.4567890;
-
-    const VAL: f32 = 3.141592;
-
-    let a = Float4::new(X, Y, Z, W);
-    let b = Float4::fill(VAL);
-    let c = Float4::new(X, Y, VAL, VAL);
-
-    let v_a = load_float4(a);
-    let v_b = load_float4(b);
-    let v_c = load_float4(c);
-    let v_res = vector_min(v_a, v_b);
-
-    assert!(vector4_eq(v_res, v_c), "invalid minimum operation!");
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let a_arr: [f32; 4] = rng.gen();
+        let b_arr: [f32; 4] = rng.gen();
+        
+        let a = Float4::from_array(&a_arr);
+        let b = Float4::from_array(&b_arr);
+        let v_a = load_float4(a);
+        let v_b = load_float4(b);
+        let v_res = vector_min(v_a, v_b);
+        let res = store_float4(v_res);
+    
+        let g_a = glam::Vec4::from_array(a_arr);
+        let g_b = glam::Vec4::from_array(b_arr);
+        let g_res = g_a.min(g_b);
+    
+        let raw_res = res.as_ref();
+        let raw_g_res = g_res.as_ref();
+        for idx in 0..4 {
+            let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+            assert!(validate, "invalid min operation (test:{}, this:{}, glam:{})", test, res, g_res);
+        }
+    }
 }
 
 #[test]
 fn vector_max_test() {
-    const X: f32 = 1.1234567;
-    const Y: f32 = 2.2345678;
-    const Z: f32 = 3.3456789;
-    const W: f32 = 4.4567890;
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let a_arr: [f32; 4] = rng.gen();
+        let b_arr: [f32; 4] = rng.gen();
 
-    const VAL: f32 = 3.141592;
-
-    let a = Float4::new(X, Y, Z, W);
-    let b = Float4::fill(VAL);
-    let c = Float4::new(VAL, VAL, Z, W);
-
-    let v_a = load_float4(a);
-    let v_b = load_float4(b);
-    let v_c = load_float4(c);
-    let v_res = vector_max(v_a, v_b);
-
-    assert!(vector4_eq(v_res, v_c), "invalid maximum operation!");
+        let a = Float4::from_array(&a_arr);
+        let b = Float4::from_array(&b_arr);
+        let v_a = load_float4(a);
+        let v_b = load_float4(b);
+        let v_res = vector_max(v_a, v_b);
+        let res = store_float4(v_res);
+    
+        let g_a = glam::Vec4::from_array(a_arr);
+        let g_b = glam::Vec4::from_array(b_arr);
+        let g_res = g_a.max(g_b);
+    
+        let raw_res = res.as_ref();
+        let raw_g_res = g_res.as_ref();
+        for idx in 0..4 {
+            let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+            assert!(validate, "invalid max operation (test:{}, this:{}, glam:{})", test, res, g_res);
+        }
+    }
 }
 
 #[test]
 fn vector2_dot_test() {
-    const X: f32 = 1.1234567;
-    const Y: f32 = 2.2345678;
-    const Z: f32 = 3.3456789;
-    const W: f32 = 4.4567890;
-
-    let a = Float4::new(X, Y, Z, W);
-    let c = X * X + Y * Y;
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let a_arr: [f32; 2] = rng.gen();
+        let b_arr: [f32; 2] = rng.gen();
+        
+        let a = Float2::from_array(&a_arr);
+        let b = Float2::from_array(&b_arr);
+        let v_a = load_float2(a);
+        let v_b = load_float2(b);
+        let res = vector2_dot(v_a, v_b);
     
-    let v_a = load_float4(a);
-    let res = vector2_dot(v_a, v_a);
-
-    assert!((res - c).abs() <= f32::EPSILON, "invalid vector2 dot operation! (res:{}, c:{})", res, c);
+        let g_a = glam::Vec2::from_array(a_arr);
+        let g_b = glam::Vec2::from_array(b_arr);
+        let g_res = g_a.dot(g_b);
+    
+        let validate = (res - g_res).abs() <= EPSILON;
+        assert!(validate, "invalid vector2 dot operation (test:{}, this:{}, glam:{})", test, res, g_res);
+    }
 }
 
 #[test]
 fn vector3_dot_test() {
-    const X: f32 = 1.1234567;
-    const Y: f32 = 2.2345678;
-    const Z: f32 = 3.3456789;
-    const W: f32 = 4.4567890;
-
-    let a = Float4::new(X, Y, Z, W);
-    let c = X * X + Y * Y + Z * Z;
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let a_arr: [f32; 3] = rng.gen();
+        let b_arr: [f32; 3] = rng.gen();
+        
+        let a = Float3::from_array(&a_arr);
+        let b = Float3::from_array(&b_arr);
+        let v_a = load_float3(a);
+        let v_b = load_float3(b);
+        let res = vector3_dot(v_a, v_b);
     
-    let v_a = load_float4(a);
-    let res = vector3_dot(v_a, v_a);
-
-    assert!((res - c).abs() <= f32::EPSILON, "invalid vector3 dot operation! (res:{}, c:{})", res, c);
+        let g_a = glam::Vec3::from_array(a_arr);
+        let g_b = glam::Vec3::from_array(b_arr);
+        let g_res = g_a.dot(g_b);
+    
+        let validate = (res - g_res).abs() <= EPSILON;
+        assert!(validate, "invalid vector3 dot operation (test:{}, this:{}, glam:{})", test, res, g_res);
+    }
 }
 
 #[test]
 fn vector4_dot_test() {
-    const X: f32 = 1.1234567;
-    const Y: f32 = 2.2345678;
-    const Z: f32 = 3.3456789;
-    const W: f32 = 4.4567890;
-
-    let a = Float4::new(X, Y, Z, W);
-    let c = X * X + Y * Y + Z * Z + W * W;
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let a_arr: [f32; 4] = rng.gen();
+        let b_arr: [f32; 4] = rng.gen();
+        
+        let a = Float4::from_array(&a_arr);
+        let b = Float4::from_array(&b_arr);
+        let v_a = load_float4(a);
+        let v_b = load_float4(b);
+        let res = vector4_dot(v_a, v_b);
     
-    let v_a = load_float4(a);
-    let res = vector4_dot(v_a, v_a);
+        let g_a = glam::Vec4::from_array(a_arr);
+        let g_b = glam::Vec4::from_array(b_arr);
+        let g_res = g_a.dot(g_b);
     
-    assert!((res - c).abs() <= f32::EPSILON, "invalid vector4 dot operation! (res:{}, c:{})", res, c);
+        let validate = (res - g_res).abs() <= EPSILON;
+        assert!(validate, "invalid vector4 dot operation (test:{}, this:{}, glam:{})", test, res, g_res);
+    }
 }
 
 #[test]
-fn vector3_cross_test_0() {
-    const AX: f32 = 1.0;
-    const AY: f32 = 0.0;
-    const AZ: f32 = 0.0;
+fn vector3_cross_test() {
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        loop {
+            let a_arr: [f32; 3] = rng.gen();
+            let b_arr: [f32; 3] = rng.gen();
 
-    const BX: f32 = 0.0;
-    const BY: f32 = 1.0;
-    const BZ: f32 = 0.0;
+            let a = Float3::from_array(&a_arr);
+            let b = Float3::from_array(&b_arr);
+            let v_a = load_float3(a);
+            let v_a = vector3_normalize(v_a);
+            let v_b = load_float3(b);
+            let v_b = vector3_normalize(v_b);
+            if v_a.is_none() | v_b.is_none() {
+                continue;
+            }
 
-    const CX: f32 = 0.0;
-    const CY: f32 = 0.0;
-    const CZ: f32 = 1.0;
+            let v_res = vector3_cross(v_a.unwrap(), v_b.unwrap());
+            let res = store_float3(v_res);
 
-    let a = Float3::new(AX, AY, AZ);
-    let b = Float3::new(BX, BY, BZ);
-    let c = Float3::new(CX, CY, CZ);
+            let g_a = glam::Vec3::from_array(a_arr).normalize();
+            let g_b = glam::Vec3::from_array(b_arr).normalize();
+            let g_res = g_a.cross(g_b);
 
-    let v_a = load_float3(a);
-    let v_b = load_float3(b);
-    let v_c = load_float3(c);
-    let v_res = vector3_cross(v_a, v_b);
-
-    assert!(vector3_eq(v_res, v_c), "invalid vector3 cross operation! (v_res:{:?}, v_c:{:?})", v_res, v_c);
+            let raw_res = res.as_ref();
+            let raw_g_res = g_res.as_ref();
+            for idx in 0..3 {
+                let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+                assert!(validate, "invalid vector3 cross operation (test:{}, this:{}, glam:{})", test, res, g_res);
+            }
+            break;
+        }
+    }
 }
 
 #[test]
-fn vector3_cross_test_1() {
-    const AX: f32 = 1.0;
-    const AY: f32 = 2.0;
-    const AZ: f32 = -2.0;
+fn quaternion_test() {
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        loop {
+            let a_arr: [f32; 4] = rng.gen();
+            let b_arr: [f32; 4] = rng.gen();
+            
+            let qa = Float4::from_array(&a_arr);
+            let qb = Float4::from_array(&b_arr);
+            let v_qa = load_float4(qa);
+            let v_qb = load_float4(qb);
+            let v_qa = vector4_normalize(v_qa);
+            let v_qb = vector4_normalize(v_qb);
+            if v_qa.is_none() | v_qb.is_none() {
+                continue;
+            }
 
-    const BX: f32 = 3.0;
-    const BY: f32 = 0.0;
-    const BZ: f32 = 1.0;
+            let v_qres = quaternion_mul(v_qa.unwrap(), v_qb.unwrap());
+            let qres = store_float4(v_qres);
 
-    const CX: f32 = 2.0;
-    const CY: f32 = -7.0;
-    const CZ: f32 = -6.0;
+            let g_qa = glam::Quat::from_array(a_arr).normalize();
+            let g_qb = glam::Quat::from_array(b_arr).normalize();
+            let g_qres = g_qa.mul_quat(g_qb);
 
-    let a = Float3::new(AX, AY, AZ);
-    let b = Float3::new(BX, BY, BZ);
-    let c = Float3::new(CX, CY, CZ);
-
-    let v_a = load_float3(a);
-    let v_b = load_float3(b);
-    let v_c = load_float3(c);
-    let v_res = vector3_cross(v_a, v_b);
-
-    assert!(vector3_eq(v_res, v_c), "invalid vector3 cross operation! (v_res:{:?}, v_c:{:?})", v_res, v_c);
-}
-
-#[test]
-fn vector3_cross_test_2() {
-    const AX: f32 = -1.0;
-    const AY: f32 = 1.0;
-    const AZ: f32 = 0.0;
-
-    const BX: f32 = -1.0;
-    const BY: f32 = 0.0;
-    const BZ: f32 = 1.0;
-
-    const CX: f32 = 1.0;
-    const CY: f32 = 1.0;
-    const CZ: f32 = 1.0;
-
-    let a = Float3::new(AX, AY, AZ);
-    let b = Float3::new(BX, BY, BZ);
-    let c = Float3::new(CX, CY, CZ);
-
-    let v_a = load_float3(a);
-    let v_b = load_float3(b);
-    let v_c = load_float3(c);
-    let v_res = vector3_cross(v_a, v_b);
-
-    assert!(vector3_eq(v_res, v_c), "invalid vector3 cross operation! (v_res:{:?}, v_c:{:?})", v_res, v_c);
-}
-
-#[test]
-fn quaternion_test_0() {
-    const AX: f32 = 0.08;
-    const AY: f32 = 0.17;
-    const AZ: f32 = -0.01;
-    const AW: f32 = 0.98;
-
-    const BX: f32 = 0.70;
-    const BY: f32 = 0.00;
-    const BZ: f32 = 0.00;
-    const BW: f32 = 0.70;
-
-    const CX: f32 = 0.742;
-    const CY: f32 = 0.112;
-    const CZ: f32 = -0.126;
-    const CW: f32 = 0.63;
-
-    let qa = Float4::new(AX, AY, AZ, AW);
-    let qb = Float4::new(BX, BY, BZ, BW);
-    let qc = Float4::new(CX, CY, CZ, CW);
-
-    let v_qa = load_float4(qa);
-    let v_qb = load_float4(qb);
-    let v_qc = load_float4(qc);
-    let v_res = quaternion_mul(v_qa, v_qb);
-
-    assert!(vector4_eq(v_res, v_qc), "invalid quaternion mul operation! (v_res:{:?}, v_qc:{:?})", v_res, v_qc);
+            let raw_qres = qres.as_ref();
+            let raw_g_qres = g_qres.as_ref();
+            for idx in 0..4 {
+                let validate = (raw_qres[idx] - raw_g_qres[idx]).abs() <= EPSILON;
+                assert!(validate, "invalid quaternion mul operation (test:{}, this:{}, glam:{})", test, qres, g_qres);
+            }
+            break;
+        }
+    }
 }
 
 #[test]
 fn matrix_transpose_test() {
-    const ARR: [f32; 16] = [
-        -66.46781402277918, 36.161587743841665, -87.87818063183681, 1.051366701884291, 
-        47.15419759697318, 12.549041556657329, 44.88190040303925, -24.39321559332491, 
-        112.4745861432626, 83.7932943750977, 119.9817159737807, -56.35303058139162, 
-        -8.26872013734797, -20.440493810186638, -118.0236429363606, -104.48928792510765
-    ];
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let arr: [f32; 16] = rng.gen();
+        let a = Float4x4::from_array(&arr);
+        let m_a = load_float4x4(a);
+        let m_ta = matrix_transpose(m_a);
+        let res = store_float4x4(m_ta);
 
-    let a = Float4x4::from_array(&ARR);
-    let m_a = load_float4x4(a);
-    let m_ta = matrix_transpose(m_a);
-    let res = store_float4x4(m_ta);
+        let g_a = glam::Mat4::from_cols_array(&arr);
+        let g_res = g_a.transpose();
+        
+        let raw_res = res.as_ref();
+        let raw_g_res = g_res.as_ref();
+        for idx in 0..16 {
+            let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+            assert!(validate, "invalid matrix transpose operation! (test:{}, this:{}, glam:{})", test, res, g_res);
+        }
+    }
+}
 
-    let arr_a = a.as_ref();
-    let arr_res = res.as_ref();
-    for row in 0..4 {
-        for col in 0..4 {
-            assert!((arr_a[row * 4 + col] - arr_res[col * 4 + row]).abs() <= f32::EPSILON, "invalid matrix transpose operation!");
+#[test]
+fn matrix_mul_test() {
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let a_arr: [f32; 16] = rng.gen();
+        let b_arr: [f32; 16] = rng.gen();
+        let a = Float4x4::from_array(&a_arr);
+        let b = Float4x4::from_array(&b_arr);
+        let m_a = load_float4x4(a);
+        let m_b = load_float4x4(b);
+        let m_res = matrix_mul(m_a, m_b);
+        let res = store_float4x4(m_res);
+
+        let g_a = glam::Mat4::from_cols_array(&a_arr);
+        let g_b = glam::Mat4::from_cols_array(&b_arr);
+        let g_res = g_a.mul_mat4(&g_b);
+
+        let raw_res = res.as_ref();
+        let raw_g_res = g_res.as_ref();
+        for idx in 0..16 {
+            let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+            assert!(validate, "invalid matrix mul operation! (test:{}, this:{}, glam:{})", test, res, g_res);
         }
     }
 }

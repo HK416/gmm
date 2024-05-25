@@ -8,5 +8,8 @@ description = "Math library for video games"
 readme = "README.md"
 license = "LICENSE"
 
+[dev-dependencies]
+rand = "0.8.*"
+glam = { version = "0.27.*", features = ["scalar-math"] } # Used to evaluate whether it is functioning properly.
 
 [dependencies]

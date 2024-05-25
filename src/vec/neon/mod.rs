@@ -167,7 +167,7 @@ pub fn vector_add(a: Vector, b: Vector) -> Vector {
     unsafe { vaddq_f32(a, b) }
 }
 
-/// Subtracts two vectors.
+/// Subracts two vectors.
 #[inline]
 pub fn vector_sub(a: Vector, b: Vector) -> Vector {
     unsafe { vsubq_f32(a, b) }
@@ -354,13 +354,11 @@ pub fn vector3_dot(a: Vector, b: Vector) -> f32 {
 #[inline]
 pub fn vector4_dot(a: Vector, b: Vector) -> f32 {
     unsafe {
-        let mul = vmulq_f32(a, b);
-        let low = vget_low_f32(mul);
-        let high = vget_high_f32(mul);
-        let v1 = vpadd_f32(low, low);
-        let v2 = vpadd_f32(high, high);
-        let sum = vadd_f32(v1, v2);
-        vget_lane_f32::<0x00>(sum)
+        let mul = vmulq_f32(a, b); // [ax*bx, ay*by, az*bz, aw*bw]
+        let sum = vpaddq_f32(mul, mul); // [ax*bx+ay*by, az*bz+aw*bw, ...]
+        let sum = vpaddq_f32(sum, sum); // [ax*bx+ay*by+az*bz+aw*bw, ...]
+        println!("sum={:?}", sum);
+        vgetq_lane_f32::<0b00>(sum)
     }
 }
 
@@ -378,19 +376,26 @@ pub fn vector3_cross(a: Vector, b: Vector) -> Vector {
         //
 
         let a_xy = vget_low_f32(a); // [ax, ay]
-        let a_zz = vdup_lane_f32::<0x00>(vget_high_f32(a)); // [az, az]
-        let a_zx = vext_f32::<0x01>(a_zz, a_xy); // [az, ax]
-        let a_yz = vext_f32::<0x01>(a_xy, a_zz); // [ay, az]
+        let a_zw = vget_high_f32(a); // [az, aw]
+        let a_yz = vext_f32::<0b01>(a_xy, a_zw); // [ay, az]
+        let a_zx = vext_f32::<0b01>(a_yz, a_xy); // [az, ax]
+        let v0 = vcombine_f32(a_yz, a_xy); // [ay, az, ax, ay]
+        let v2 = vcombine_f32(a_zx, a_yz); // [az, ax, ay, az]
 
         let b_xy = vget_low_f32(b); // [bx, by]
-        let b_yx = vrev64_f32(b_xy); // [by, bx]
-        let b_zz = vdup_lane_f32::<0x00>(vget_high_f32(b)); // [bz, bz]
-        let b_yz = vext_f32::<0x01>(b_xy, b_zz); // [by, bz]
-        let b_zx = vext_f32::<0x01>(b_zz, b_xy); // [bz, bx]
+        let b_zw = vget_high_f32(b); // [bz, bw]
+        let b_yz = vext_f32::<0b01>(b_xy, b_zw); // [by, bz]
+        let b_zx = vext_f32::<0b01>(b_yz, b_xy); // [bz, bx]
+        let v1 = vcombine_f32(b_zx, b_yz); // [bz, bx, by, bz]
+        let v3 = vcombine_f32(b_yz, b_xy); // [by, bz, bx, by]
 
-        let result = vmulq_f32(vcombine_f32(a_yz, a_xy), vcombine_f32(b_zx, b_yx)); // [ay*bz, az*bx, ax*by, _]
-        let result = vmlsq_f32(result, vcombine_f32(a_zx, a_yz), vcombine_f32(b_yz, b_xy)); // [ay*bz-az*by, az*bx-ax*bz, ax*by-ay*bx, _]
-        vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(result), vld1q_dup_u32(&BIT_MASK as *const u32)))
+        let t0 = vmulq_f32(v0, v1);
+        let t1 = vmulq_f32(v2, v3);
+        let res = vsubq_f32(t0, t1);
+        let res = vreinterpretq_u32_f32(res);
+        let mask = vld1q_u32(&BIT_MASK as *const u32);
+        let res = vandq_u32(res, mask);
+        vreinterpretq_f32_u32(res)
     }
 }
 
@@ -518,9 +523,93 @@ pub fn quaternion_inverse(q: Vector) -> Option<Vector> {
 #[inline]
 pub fn matrix_mul(a: Matrix, b: Matrix) -> Matrix {
     unsafe {
+        let ta = matrix_transpose(a);
+
+        let m00 = vector_mul(ta[0], b[0]); // [x, y, z, w]
+        let m00 = vpaddq_f32(m00, m00); // [x+y, z+w, x+y, z+w]
+        let m00 = vpaddq_f32(m00, m00); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
         
+        let m01 = vector_mul(ta[1], b[0]); // [x, y, z, w]
+        let m01 = vpaddq_f32(m01, m01); // [x+y, z+w, x+y, z+w]
+        let m01 = vpaddq_f32(m01, m01); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let m02 = vector_mul(ta[2], b[0]); // [x, y, z, w]
+        let m02 = vpaddq_f32(m02, m02); // [x+y, z+w, x+y, z+w]
+        let m02 = vpaddq_f32(m02, m02); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let m03 = vector_mul(ta[3], b[0]); // [x, y, z, w]
+        let m03 = vpaddq_f32(m03, m03); // [x+y, z+w, x+y, z+w]
+        let m03 = vpaddq_f32(m03, m03); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let low = vtrn1q_f32(m00, m01); // [m00, m01, m00, m01]
+        let high = vtrn1q_f32(m02, m03); // [m02, m03, m02, m03]
+        let v0 = vextq_f32::<0b10>(low, high); // [m00, m01, m02, m03]
+        
+
+        let m10 = vector_mul(ta[0], b[1]); // [x, y, z, w]
+        let m10 = vpaddq_f32(m10, m10); // [x+y, z+w, x+y, z+w]
+        let m10 = vpaddq_f32(m10, m10); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+        
+        let m11 = vector_mul(ta[1], b[1]); // [x, y, z, w]
+        let m11 = vpaddq_f32(m11, m11); // [x+y, z+w, x+y, z+w]
+        let m11 = vpaddq_f32(m11, m11); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let m12 = vector_mul(ta[2], b[1]); // [x, y, z, w]
+        let m12 = vpaddq_f32(m12, m12); // [x+y, z+w, x+y, z+w]
+        let m12 = vpaddq_f32(m12, m12); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let m13 = vector_mul(ta[3], b[1]); // [x, y, z, w]
+        let m13 = vpaddq_f32(m13, m13); // [x+y, z+w, x+y, z+w]
+        let m13 = vpaddq_f32(m13, m13); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let low = vtrn1q_f32(m10, m11); // [m10, m11, m10, m11]
+        let high = vtrn1q_f32(m12, m13); // [m12, m13, m12, m13]
+        let v1 = vextq_f32::<0b10>(low, high); // [m10, m11, m12, m13]
+
+
+        let m20 = vector_mul(ta[0], b[2]); // [x, y, z, w]
+        let m20 = vpaddq_f32(m20, m20); // [x+y, z+w, x+y, z+w]
+        let m20 = vpaddq_f32(m20, m20); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+        
+        let m21 = vector_mul(ta[1], b[2]); // [x, y, z, w]
+        let m21 = vpaddq_f32(m21, m21); // [x+y, z+w, x+y, z+w]
+        let m21 = vpaddq_f32(m21, m21); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let m22 = vector_mul(ta[2], b[2]); // [x, y, z, w]
+        let m22 = vpaddq_f32(m22, m22); // [x+y, z+w, x+y, z+w]
+        let m22 = vpaddq_f32(m22, m22); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let m23 = vector_mul(ta[3], b[2]); // [x, y, z, w]
+        let m23 = vpaddq_f32(m23, m23); // [x+y, z+w, x+y, z+w]
+        let m23 = vpaddq_f32(m23, m23); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let low = vtrn1q_f32(m20, m21); // [m20, m21, m20, m21]
+        let high = vtrn1q_f32(m22, m23); // [m22, m23, m22, m23]
+        let v2 = vextq_f32::<0b10>(low, high); // [m20, m21, m22, m23]
+
+
+        let m30 = vector_mul(ta[0], b[3]); // [x, y, z, w]
+        let m30 = vpaddq_f32(m30, m30); // [x+y, z+w, x+y, z+w]
+        let m30 = vpaddq_f32(m30, m30); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+        
+        let m31 = vector_mul(ta[1], b[3]); // [x, y, z, w]
+        let m31 = vpaddq_f32(m31, m31); // [x+y, z+w, x+y, z+w]
+        let m31 = vpaddq_f32(m31, m31); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let m32 = vector_mul(ta[2], b[3]); // [x, y, z, w]
+        let m32 = vpaddq_f32(m32, m32); // [x+y, z+w, x+y, z+w]
+        let m32 = vpaddq_f32(m32, m32); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let m33 = vector_mul(ta[3], b[3]); // [x, y, z, w]
+        let m33 = vpaddq_f32(m33, m33); // [x+y, z+w, x+y, z+w]
+        let m33 = vpaddq_f32(m33, m33); // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+
+        let low = vtrn1q_f32(m30, m31); // [m30, m31, m30, m31]
+        let high = vtrn1q_f32(m32, m33); // [m32, m33, m32, m33]
+        let v3 = vextq_f32::<0b10>(low, high); // [m30, m31, m32, m33]
+
+        [v0, v1, v2, v3]
     }
-    todo!()
 }
 
 #[inline]
