@@ -368,3 +368,27 @@ fn quaternion_test_0() {
 
     assert!(vector4_eq(v_res, v_qc), "invalid quaternion mul operation! (v_res:{:?}, v_qc:{:?})", v_res, v_qc);
 }
+
+#[test]
+fn matrix_transpose_test() {
+    const ARR: [f32; 16] = [
+        -66.46781402277918, 36.161587743841665, -87.87818063183681, 1.051366701884291, 
+        47.15419759697318, 12.549041556657329, 44.88190040303925, -24.39321559332491, 
+        112.4745861432626, 83.7932943750977, 119.9817159737807, -56.35303058139162, 
+        -8.26872013734797, -20.440493810186638, -118.0236429363606, -104.48928792510765
+    ];
+
+    let a = Float4x4::from_array(&ARR);
+    let m_a = load_float4x4(a);
+    let m_ta = matrix_transpose(m_a);
+    let res = store_float4x4(m_ta);
+
+    let arr_a = a.as_ref();
+    let arr_res = res.as_ref();
+    for row in 0..4 {
+        for col in 0..4 {
+            assert!((arr_a[row * 4 + col] - arr_res[col * 4 + row]).abs() <= f32::EPSILON, "invalid matrix transpose operation!");
+        }
+    }
+}
+

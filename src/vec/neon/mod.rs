@@ -10,7 +10,7 @@ pub type Vector = float32x4_t;
 pub type VectorU32 = uint32x4_t;
 
 /// This is the data type used in matrix operations.
-pub type MATRIX = [float32x4_t; 4];
+pub type Matrix = [float32x4_t; 4];
 
 
 /// Load vector data from [`Boolean2`].
@@ -51,13 +51,13 @@ pub fn load_float4(src: Float4) -> Vector {
 
 /// Load matrix data from [`Float3x3`].
 #[inline(always)]
-pub fn load_float3x3(src: Float3x3) -> MATRIX {
+pub fn load_float3x3(src: Float3x3) -> Matrix {
     load_float4x4(Float4x4::from(src))
 }
 
 /// Load matrix data from [`Float4x4`].
 #[inline(always)]
-pub fn load_float4x4(src: Float4x4) -> MATRIX {
+pub fn load_float4x4(src: Float4x4) -> Matrix {
     [
         load_float4(src.x_axis), 
         load_float4(src.y_axis), 
@@ -124,13 +124,13 @@ pub fn store_float4(src: Vector) -> Float4 {
 
 /// Store matrix data in [`Float3x3`].
 #[inline(always)]
-pub fn store_float3x3(src: MATRIX) -> Float3x3 {
+pub fn store_float3x3(src: Matrix) -> Float3x3 {
     Float3x3::from(store_float4x4(src))
 }
 
 /// Store matrix data in [`Float4x4`].
 #[inline(always)]
-pub fn store_float4x4(src: MATRIX) -> Float4x4 {
+pub fn store_float4x4(src: Matrix) -> Float4x4 {
     Float4x4 { 
         x_axis: store_float4(src[0]), 
         y_axis: store_float4(src[1]), 
@@ -510,4 +510,61 @@ pub fn quaternion_conjugate(q: Vector) -> Vector {
 pub fn quaternion_inverse(q: Vector) -> Option<Vector> {
     quaternion_normalize(q)
         .map(|q| quaternion_conjugate(q))
+}
+
+
+
+/// Multiplies two matrices.
+#[inline]
+pub fn matrix_mul(a: Matrix, b: Matrix) -> Matrix {
+    unsafe {
+        
+    }
+    todo!()
+}
+
+#[inline]
+pub fn matrix_transpose(m: Matrix) -> Matrix {
+    // matrix m
+    // A, B, C, D
+    // E, F, G, H
+    // I, J, K, L
+    // M, N, O, P
+    //
+    unsafe {
+        // matrix m0, m1
+        // v01.0 [A, E, C, G]
+        // v01.1 [B, F, D, H]
+        // v23.0 [I, M, K, O]
+        // v23.1 [J, N, L, P]
+        //
+        let v01 = vtrnq_f32(m[0], m[1]); 
+        let v23 = vtrnq_f32(m[2], m[3]);
+        
+        let low = vget_low_f32(v01.0); // [A, E]
+        let high = vget_low_f32(v23.0); // [I, M]
+        let v0 = vcombine_f32(low, high); // [A, E, I, M]
+
+        let low = vget_low_f32(v01.1); // [B, F]
+        let high = vget_low_f32(v23.1); // [J, N]
+        let v1 = vcombine_f32(low, high); // [B, F, J, N]
+
+        let low = vget_high_f32(v01.0); // [C, G]
+        let high = vget_high_f32(v23.0); // [K, O]
+        let v2 = vcombine_f32(low, high); // [C, G, K, O]
+
+        let low = vget_high_f32(v01.1); // [D, H]
+        let high = vget_high_f32(v23.1); // [L, P]
+        let v3 = vcombine_f32(low, high); // [G, H, L, P]
+
+        [v0, v1, v2, v3]
+    }
+}
+
+pub fn matrix_inverse(m: Matrix) -> Option<Matrix> {
+    todo!()
+}
+
+pub fn matrix_determinant(m: Matrix) -> f32 {
+    todo!()
 }
