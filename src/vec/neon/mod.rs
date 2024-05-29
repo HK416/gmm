@@ -612,6 +612,7 @@ pub fn matrix_mul(a: Matrix, b: Matrix) -> Matrix {
     }
 }
 
+/// Transpose of a matrix.
 #[inline]
 pub fn matrix_transpose(m: Matrix) -> Matrix {
     // matrix m

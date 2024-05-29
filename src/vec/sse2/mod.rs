@@ -14,7 +14,7 @@ pub type Vector = __m128;
 pub type VectorU32 = __m128i;
 
 /// This is the data type used in matrix operation.
-pub type MATRIX = [__m128; 4];
+pub type Matrix = [__m128; 4];
 
 
 
@@ -56,13 +56,13 @@ pub fn load_float4(src: Float4) -> Vector {
 
 /// Load matrix data from [`Float3x3`].
 #[inline(always)]
-pub fn load_float3x3(src: Float3x3) -> MATRIX {
+pub fn load_float3x3(src: Float3x3) -> Matrix {
     load_float4x4(Float4x4::from(src))
 }
 
 /// Load matrix data from [`Float4x4`].
 #[inline(always)]
-pub fn load_float4x4(src: Float4x4) -> MATRIX {
+pub fn load_float4x4(src: Float4x4) -> Matrix {
     [
         load_float4(src.x_axis), 
         load_float4(src.y_axis), 
@@ -129,13 +129,13 @@ pub fn store_float4(src: Vector) -> Float4 {
 
 /// Store matrix data in [`Float3x3`].
 #[inline(always)]
-pub fn store_float3x3(src: MATRIX) -> Float3x3 {
+pub fn store_float3x3(src: Matrix) -> Float3x3 {
     Float3x3::from(store_float4x4(src))
 }
 
 /// Store matrix data in [`Float4x4`].
 #[inline(always)]
-pub fn store_float4x4(src: MATRIX) -> Float4x4 {
+pub fn store_float4x4(src: Matrix) -> Float4x4 {
     Float4x4 { 
         x_axis: store_float4(src[0]), 
         y_axis: store_float4(src[1]), 
@@ -483,4 +483,184 @@ pub fn quaternion_conjugate(q: Vector) -> Vector {
 pub fn quaternion_inverse(q: Vector) -> Option<Vector> {
     quaternion_normalize(q)
         .map(|q| quaternion_conjugate(q))
+}
+
+
+
+/// Multiplies two matrices.
+#[inline]
+pub fn matrix_mul(a: Matrix, b: Matrix) -> Matrix {
+    unsafe {
+        let ta = matrix_transpose(a);
+
+        let m00 = vector_mul(ta[0], b[0]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m00, m00); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m00, m00); // [z, w, z, w]
+        let m00 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m00, m00); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m00, m00); // [y+w, ...]
+        let m00 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m01 = vector_mul(ta[1], b[0]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m01, m01); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m01, m01); // [z, w, z, w]
+        let m01 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m01, m01); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m01, m01); // [y+w, ...]
+        let m01 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m02 = vector_mul(ta[2], b[0]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m02, m02); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m02, m02); // [z, w, z, w]
+        let m02 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m02, m02); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m02, m02); // [y+w, ...]
+        let m02 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m03 = vector_mul(ta[3], b[0]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m03, m03); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m03, m03); // [z, w, z, w]
+        let m03 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m03, m03); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m03, m03); // [y+w, ...]
+        let m03 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+
+        let low = _mm_shuffle_ps::<0b_00_00_00_00>(m00, m01); // [m00, m00, m01, m01]
+        let high = _mm_shuffle_ps::<0b_00_00_00_00>(m02, m03); // [m02, m02, m03, m03]
+        let v0 = _mm_shuffle_ps::<0b_10_00_10_00>(low, high); // [m00, m01, m02, m03]
+        
+        let m10 = vector_mul(ta[0], b[1]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m10, m10); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m10, m10); // [z, w, z, w]
+        let m10 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m10, m10); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m10, m10); // [y+w, ...]
+        let m10 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m11 = vector_mul(ta[1], b[1]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m11, m11); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m11, m11); // [z, w, z, w]
+        let m11 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m11, m11); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m11, m11); // [y+w, ...]
+        let m11 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m12 = vector_mul(ta[2], b[1]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m12, m12); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m12, m12); // [z, w, z, w]
+        let m12 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m12, m12); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m12, m12); // [y+w, ...]
+        let m12 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m13 = vector_mul(ta[3], b[1]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m13, m13); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m13, m13); // [z, w, z, w]
+        let m13 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m13, m13); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m13, m13); // [y+w, ...]
+        let m13 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+
+        let low = _mm_shuffle_ps::<0b_00_00_00_00>(m10, m11); // [m10, m10, m11, m11]
+        let high = _mm_shuffle_ps::<0b_00_00_00_00>(m12, m13); // [m12, m12, m13, m13]
+        let v1 = _mm_shuffle_ps::<0b_10_00_10_00>(low, high); // [m10, m11, m12, m13]
+        
+        let m20 = vector_mul(ta[0], b[2]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m20, m20); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m20, m20); // [z, w, z, w]
+        let m20 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m20, m20); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m20, m20); // [y+w, ...]
+        let m20 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m21 = vector_mul(ta[1], b[2]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m21, m21); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m21, m21); // [z, w, z, w]
+        let m21 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m21, m21); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m21, m21); // [y+w, ...]
+        let m21 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m22 = vector_mul(ta[2], b[2]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m22, m22); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m22, m22); // [z, w, z, w]
+        let m22 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m22, m22); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m22, m22); // [y+w, ...]
+        let m22 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m23 = vector_mul(ta[3], b[2]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m23, m23); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m23, m23); // [z, w, z, w]
+        let m23 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m23, m23); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m23, m23); // [y+w, ...]
+        let m23 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+
+        let low = _mm_shuffle_ps::<0b_00_00_00_00>(m20, m21); // [m20, m20, m21, m21]
+        let high = _mm_shuffle_ps::<0b_00_00_00_00>(m22, m23); // [m22, m22, m23, m23]
+        let v2 = _mm_shuffle_ps::<0b_10_00_10_00>(low, high); // [m20, m21, m22, m23]
+        
+        let m30 = vector_mul(ta[0], b[3]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m30, m30); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m30, m30); // [z, w, z, w]
+        let m30 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m30, m30); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m30, m30); // [y+w, ...]
+        let m30 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m31 = vector_mul(ta[1], b[3]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m31, m31); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m31, m31); // [z, w, z, w]
+        let m31 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m31, m31); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m31, m31); // [y+w, ...]
+        let m31 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m32 = vector_mul(ta[2], b[3]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m32, m32); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m32, m32); // [z, w, z, w]
+        let m32 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m32, m32); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m32, m32); // [y+w, ...]
+        let m32 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+        
+        let m33 = vector_mul(ta[3], b[3]); // [x, y, z, w]
+        let low = _mm_shuffle_ps::<0b_01_00_01_00>(m33, m33); // [x, y, x, y]
+        let high = _mm_shuffle_ps::<0b_11_10_11_10>(m33, m33); // [z, w, z, w]
+        let m33 = _mm_add_ps(low, high); // [x+z, y+w, x+z, y+w]
+        let low = _mm_shuffle_ps::<0b_10_00_10_00>(m33, m33); // [x+z, ...]
+        let high = _mm_shuffle_ps::<0b_11_01_11_01>(m33, m33); // [y+w, ...]
+        let m33 = _mm_add_ps(low, high); // [x+y+z+w, ...]
+
+        let low = _mm_shuffle_ps::<0b_00_00_00_00>(m30, m31); // [m30, m30, m31, m31]
+        let high = _mm_shuffle_ps::<0b_00_00_00_00>(m32, m33); // [m32, m32, m33, m33]
+        let v3 = _mm_shuffle_ps::<0b_10_00_10_00>(low, high); // [m30, m31, m32, m33]
+
+        [v0, v1, v2, v3]
+    }
+}
+
+/// Transpose of a matrix.
+#[inline]
+pub fn matrix_transpose(m: Matrix) -> Matrix {
+    // matrix m
+    // A, B, C, D
+    // E, F, G, H
+    // I, J, K, L
+    // M, N, O, P
+    //
+    unsafe {
+        let low01 = _mm_shuffle_ps::<0b_01_00_01_00>(m[0], m[1]); // [A, B, E, F]
+        let low23 = _mm_shuffle_ps::<0b_01_00_01_00>(m[2], m[3]); // [I, J, M, N]
+        let high01 = _mm_shuffle_ps::<0b_11_10_11_10>(m[0], m[1]); // [C, D, G, H]
+        let high23 = _mm_shuffle_ps::<0b_11_10_11_10>(m[2], m[3]); // [K, L, O, P]
+
+        let v0 = _mm_shuffle_ps::<0b_10_00_10_00>(low01, low23); //[A, E, I, M]
+        let v1 = _mm_shuffle_ps::<0b_11_01_11_01>(low01, low23); // [B, F, J, N]
+        let v2 = _mm_shuffle_ps::<0b_10_00_10_00>(high01, high23); // [C, G, K, O]
+        let v3 = _mm_shuffle_ps::<0b_11_01_11_01>(high01, high23); // [D, H, L, P]
+
+        [v0, v1, v2, v3]
+    }
 }
