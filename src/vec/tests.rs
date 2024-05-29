@@ -456,3 +456,19 @@ fn matrix_mul_test() {
     }
 }
 
+#[test]
+fn matrix_determinant_test() {
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let arr: [f32; 16] = rng.gen();
+        let a = Float4x4::from_array(&arr);
+        let m_a = load_float4x4(a);
+        let det = matrix_determinant(m_a);
+
+        let g_a = glam::Mat4::from_cols_array(&arr);
+        let g_det = g_a.determinant();
+
+        let validate = (det - g_det).abs() <= EPSILON;
+        assert!(validate, "invalid matrix determinant operation! (test:{}, this:{}, glam:{})", test, det, g_det);
+    }
+}
