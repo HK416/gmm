@@ -656,5 +656,96 @@ pub fn matrix_inverse(m: Matrix) -> Option<Matrix> {
 }
 
 pub fn matrix_determinant(m: Matrix) -> f32 {
-    todo!()
+    // det = m00 * (m11*m22*m33 + m12*m23*m31 + m13*m21*m32 - m13*m22*m31 - m12*m21*m33 - m11*m23*m32)
+    //      - m10 * (m01*m22*m33 + m02*m23*m31 + m03*m21*m32 - m03*m22*m31 - m02*m21*m33 - m01*m23*m32)
+    //      + m20 * (m01*m12*m33 + m02*m13*m33 - m01*m13*m32 - m03*m12*m31 - m02*m11*m33 - m01*m13*m32)
+    //      - m30 * (m01*m12*m23 + m02*m13*m21 + m03*m11*m22 - m03*m12*m21 - m02*m11*m23 - m01*m13*m22)
+    //
+    const BIT_MASK: [u32; 4] = [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000];
+    unsafe {
+        
+        let m1_yzwx = vextq_f32::<0b01>(m[1], m[1]); // [m11, m12, m13, m10]
+        let m2_yzwx = vextq_f32::<0b01>(m[2], m[2]); // [m21, m22, m23, m20]
+        let m2_zwyz = vextq_f32::<0b10>(m[2], m2_yzwx); // [m22, m23, m21, m22]
+        let m3_yzwx = vextq_f32::<0b01>(m[3], m[3]); // [m31, m32, m33, m30]
+        let m3_wyzw = vextq_f32::<0b11>(m[3], m3_yzwx); // [m33, m31, m32, m33]
+        let temp = vmulq_f32(m1_yzwx, m2_zwyz); // [m11*m22, m12*m23, m13*m21, --]
+        let v0 = vmulq_f32(temp, m3_wyzw); // [m11*m22*m33, m12*m23*m31, m13*m21*m32, --]
+
+        let m1_yxwz = vrev64q_f32(m[1]); // [m11, m10, m13, m12]
+        let m1_wzyx = vcombine_f32(vget_high_f32(m1_yxwz), vget_low_f32(m1_yxwz)); // [m13, m12, m11, m10]
+        let m2_wzzy = vrev64q_f32(m2_zwyz); // [m23, m22, m22, m21]
+        let m2_zywz = vcombine_f32(vget_high_f32(m2_wzzy), vget_low_f32(m2_wzzy)); // [m22, m31, m23, m22]
+        let m3_wy = vget_low_f32(m3_wyzw); // [m33, m31]
+        let m3_yw = vext_f32::<0b01>(m3_wy, m3_wy); // [m31, m33]
+        let m3_zw = vget_high_f32(m3_wyzw); // [m32, m33]
+        let m3_ywzw = vcombine_f32(m3_yw, m3_zw); // [m31, m33, m32, m33]
+        let temp = vmulq_f32(m1_wzyx, m2_zywz); // [m13*m22, m12*m21, m11*m23, --]
+        let v1 = vmulq_f32(temp, m3_ywzw); // [m13*m22*m31, m12*m21*m33, m11*m23*m32, --]
+
+        let m0_xxxx = vdupq_laneq_f32::<0b00>(m[0]); // [m00, ...]        
+        let temp = vsubq_f32(v0, v1); // [m11*m22*m33-m13*m22*m31, m12*m23*m31-m12*m21*m33, m13*m21*m32-m11*m23*m32, --]
+        let res0 = vmulq_f32(m0_xxxx, temp); 
+
+
+        let m0_yzwx = vextq_f32::<0b01>(m[0], m[0]); // [m01, m02, m03, m00]
+        let temp = vmulq_f32(m0_yzwx, m2_zwyz); // [m01*m22, m02*m23, m03*m21, --]
+        let v0 = vmulq_f32(temp, m3_wyzw); // [m01*m22*m33, m02*m23*m31, m03*m21*m32, --]
+
+        let m0_yxwz = vrev64q_f32(m[0]); // [m01, m00, m03, m02]
+        let m0_wzyx = vcombine_f32(vget_high_f32(m0_yxwz), vget_low_f32(m0_yxwz)); // [m03, m02, m01, m00]
+        let temp = vmulq_f32(m0_wzyx, m2_zywz); // [m03*m22, m02*m21, m01*m23, --]
+        let v1 = vmulq_f32(temp, m3_ywzw); // [m03*m22*m31, m02*m21*m33, m01*m23*m32, --]
+
+        let m1_xxxx = vdupq_laneq_f32::<0b00>(m[1]);
+        let temp = vsubq_f32(v0, v1); // [m01*m22*m33-m03*m22*m31, m02*m23*m31-m02*m21*m33, m03*m21*m32-m01*m23*m32, --]
+        let res1 = vmulq_f32(m1_xxxx, temp);
+
+
+        let m1_wz = vget_low_f32(m1_wzyx); // [m13, m12]
+        let m1_zw = vext_f32::<0b01>(m1_wz, m1_wz); // [m12, m13]
+        let m1_yx = vget_high_f32(m1_wzyx); // [m11, m10]
+        let m1_zwyx = vcombine_f32(m1_zw, m1_yx); // [m12, m13, m11, m10]
+        let temp = vmulq_f32(m0_yzwx, m1_zwyx); // [m01*m12, m02*m13, m03*m11, --]
+        let v0 = vmulq_f32(temp, m3_wyzw); // [m01*m12*m33, m02*m13*m31, m03*m11*m32, --]
+
+        let m1_zy = vext_f32::<0b01>(m1_wz, m1_yx); // [m13, m11]
+        let m1_zywz = vcombine_f32(m1_zy, m1_wz); // [m12, m11, m13, m12]
+        let temp = vmulq_f32(m0_wzyx, m1_zywz); // [m03*m12, m02*m11, m01*m13, --]
+        let v1 = vmulq_f32(temp, m3_ywzw); // [m03*m12*m31, m02*m11*m33, m01*m13*m32, --]
+
+        let m2_xxxx = vdupq_laneq_f32::<0b00>(m[2]); // [m20, m20, m20, m20]
+        let temp = vsubq_f32(v0, v1); // [m01*m12*m33-m03*m12*m31, m02*m13*m31-m02*m11*m33, m03*m11*m32-m01*m13*m32, --]
+        let res2 = vmulq_f32(m2_xxxx, temp);
+
+
+        let m2_wyzx = vextq_f32::<0b01>(m2_zwyz, m2_xxxx); // [m23, m21, m22, m20]
+        let temp = vmulq_f32(m0_yzwx, m1_zwyx); // [m01*m12, m02*m13, m03*m11, --]
+        let v0 = vmulq_f32(temp, m2_wyzx); // [m01*m12*m23, m02*m13*m21, m03*m11*m22, --]
+
+        let m1_yz = vget_low_f32(m1_yzwx); // [m11, m12]
+        let m1_zy = vext_f32::<0b01>(m1_yz, m1_yz); // [m12, m11]
+        let m1_wx = vget_high_f32(m1_yzwx); // [m13, m10]
+        let m1_zywx = vcombine_f32(m1_zy, m1_wx); // [m12, m11, m13, m10]
+        let m2_ywzz = vextq_f32::<0b01>(m2_zywz, m2_zywz);
+        let temp = vmulq_f32(m0_wzyx, m1_zywx); // [m03*m12, m02*m11, m01*m13, --]
+        let v1 = vmulq_f32(temp, m2_ywzz); // [m03*m12*m21, m02*m11*m23, m01*m13*m22, --]
+
+        let m3_xxxx = vdupq_laneq_f32::<0b00>(m[3]); // [m30, m30, m30, m30]
+        let temp = vsubq_f32(v0, v1); // [m01*m12*m23-m03*m12*m21, m02*m13*m21-m02*m11*m23, m03*m11*m22-m01*m13*m22, --]
+        let res3 = vmulq_f32(m3_xxxx, temp);
+
+        let v0 = vsubq_f32(res0, res1);
+        let v1 = vsubq_f32(res2, res3);
+        let temp = vaddq_f32(v0, v1);
+
+        let temp = vreinterpretq_u32_f32(temp);
+        let mask = vld1q_u32(&BIT_MASK as *const u32);
+        let temp = vandq_u32(temp, mask);
+        let temp = vreinterpretq_f32_u32(temp);
+
+        let res = vpaddq_f32(temp, temp);
+        let res = vpaddq_f32(res, res);
+        vgetq_lane_f32::<0b00>(res)
+    }
 }
