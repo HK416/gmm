@@ -519,6 +519,28 @@ pub fn quaternion_inverse(q: Vector) -> Option<Vector> {
 
 
 
+/// Adds two matrices.
+#[inline(always)]
+pub fn matrix_add(a: Matrix, b: Matrix) -> Matrix {
+    [
+        vector_add(a[0], b[0]), 
+        vector_add(a[1], b[1]), 
+        vector_add(a[2], b[2]), 
+        vector_add(a[3], b[3])
+    ]
+}
+
+/// Subtracts two matrices.
+#[inline(always)]
+pub fn matrix_sub(a: Matrix, b: Matrix) -> Matrix {
+    [
+        vector_sub(a[0], b[0]), 
+        vector_sub(a[1], b[1]), 
+        vector_sub(a[2], b[2]), 
+        vector_sub(a[3], b[3])
+    ]
+}
+
 /// Multiplies two matrices.
 #[inline]
 pub fn matrix_mul(a: Matrix, b: Matrix) -> Matrix {
