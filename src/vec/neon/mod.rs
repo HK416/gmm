@@ -541,6 +541,17 @@ pub fn matrix_sub(a: Matrix, b: Matrix) -> Matrix {
     ]
 }
 
+/// Negativizes the given matrix.
+#[inline(always)]
+pub fn matrix_neg(m: Matrix) -> Matrix {
+    [
+        vector_neg(m[0]), 
+        vector_neg(m[1]), 
+        vector_neg(m[2]), 
+        vector_neg(m[3])
+    ]
+}
+
 /// Multiplies two matrices.
 #[inline]
 pub fn matrix_mul(a: Matrix, b: Matrix) -> Matrix {
