@@ -271,6 +271,33 @@ fn vector_max_test() {
 }
 
 #[test]
+fn vector_transform_test() {
+    let mut rng = rand::thread_rng();
+    for test in 0..NUM_TEST {
+        let matrix: [f32; 16] = rng.gen();
+        let vector: [f32; 4] = rng.gen();
+
+        let m = Float4x4::from_array(&matrix);
+        let v = Float4::from_array(&vector);
+        let m = load_float4x4(m);
+        let v = load_float4(v);
+        let res = vector_transform(m, v);
+        let res = store_float4(res);
+
+        let g_m = glam::Mat4::from_cols_array(&matrix);
+        let g_v = glam::Vec4::from_array(vector);
+        let g_res = g_m.mul_vec4(g_v);
+
+        let raw_res = res.as_ref();
+        let raw_g_res = g_res.as_ref();
+        for idx in 0..4 {
+            let validate = (raw_res[idx] - raw_g_res[idx]).abs() <= EPSILON;
+            assert!(validate, "invalid vector transform operation (test:{}, this:{}, glam:{})", test, res, g_res);
+        }
+    }
+}
+
+#[test]
 fn vector2_dot_test() {
     let mut rng = rand::thread_rng();
     for test in 0..NUM_TEST {

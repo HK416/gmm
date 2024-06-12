@@ -249,6 +249,32 @@ pub fn vector_ne(a: Vector, b: Vector) -> Boolean4 {
     unsafe { store_boolean4(vmvnq_u32(vceqq_f32(a, b))) }
 }
 
+/// Transformation of the given vector.
+#[inline]
+pub fn vector_transform(m: Matrix, v: Vector) -> Vector {
+    unsafe {
+        let tm = matrix_transpose(m);
+        let e0 = vector_mul(tm[0], v);
+        let e0 = vpaddq_f32(e0, e0);
+        let e0 = vpaddq_f32(e0, e0);
+
+        let e1 = vector_mul(tm[1], v);
+        let e1 = vpaddq_f32(e1, e1);
+        let e1 = vpaddq_f32(e1, e1);
+
+        let e2 = vector_mul(tm[2], v);
+        let e2 = vpaddq_f32(e2, e2);
+        let e2 = vpaddq_f32(e2, e2);
+
+        let e3 = vector_mul(tm[3], v);
+        let e3 = vpaddq_f32(e3, e3);
+        let e3 = vpaddq_f32(e3, e3);
+
+        let a = vextq_f32::<0b01>(e0, e1); // [e0, e0, e0, e1]
+        let b = vextq_f32::<0b11>(e2, e3); // [e2, e3, e3, e3]
+        vextq_f32::<0b10>(a, b) // [e0, e1, e2, e3]
+    }
+}
 
 
 /// Length sqared of a two-element vector.
