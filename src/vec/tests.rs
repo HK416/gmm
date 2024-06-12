@@ -51,7 +51,7 @@ fn matrix_load_store_test() {
         99.87223603758153
     ];
 
-    let a = Float4x4::from_array(&ELEMENTS);
+    let a = Float4x4::from_column_array(&ELEMENTS);
     let m = load_float4x4(a);
     let b = store_float4x4(m);
 
@@ -277,7 +277,7 @@ fn vector_transform_test() {
         let matrix: [f32; 16] = rng.gen();
         let vector: [f32; 4] = rng.gen();
 
-        let m = Float4x4::from_array(&matrix);
+        let m = Float4x4::from_column_array(&matrix);
         let v = Float4::from_array(&vector);
         let m = load_float4x4(m);
         let v = load_float4(v);
@@ -440,7 +440,7 @@ fn matrix_transpose_test() {
     let mut rng = rand::thread_rng();
     for test in 0..NUM_TEST {
         let arr: [f32; 16] = rng.gen();
-        let a = Float4x4::from_array(&arr);
+        let a = Float4x4::from_column_array(&arr);
         let m_a = load_float4x4(a);
         let m_ta = matrix_transpose(m_a);
         let res = store_float4x4(m_ta);
@@ -463,8 +463,8 @@ fn matrix_mul_test() {
     for test in 0..NUM_TEST {
         let a_arr: [f32; 16] = rng.gen();
         let b_arr: [f32; 16] = rng.gen();
-        let a = Float4x4::from_array(&a_arr);
-        let b = Float4x4::from_array(&b_arr);
+        let a = Float4x4::from_column_array(&a_arr);
+        let b = Float4x4::from_column_array(&b_arr);
         let m_a = load_float4x4(a);
         let m_b = load_float4x4(b);
         let m_res = matrix_mul(m_a, m_b);
@@ -488,7 +488,7 @@ fn matrix_determinant_test() {
     let mut rng = rand::thread_rng();
     for test in 0..NUM_TEST {
         let arr: [f32; 16] = rng.gen();
-        let a = Float4x4::from_array(&arr);
+        let a = Float4x4::from_column_array(&arr);
         let m_a = load_float4x4(a);
         let det = matrix_determinant(m_a);
 

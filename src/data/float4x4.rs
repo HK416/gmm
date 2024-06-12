@@ -36,7 +36,7 @@ impl Float4x4 {
     /// 
     #[must_use]
     #[inline(always)]
-    pub fn from_array(arr: &[f32]) -> Self {
+    pub fn from_column_array(arr: &[f32]) -> Self {
         Self { 
             x_axis: Float4::from_array(&arr[0..4]), 
             y_axis: Float4::from_array(&arr[4..8]), 

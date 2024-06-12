@@ -35,7 +35,7 @@ impl Float3x3 {
     /// 
     #[must_use]
     #[inline(always)]
-    pub fn from_array(arr: &[f32]) -> Self {
+    pub fn from_column_array(arr: &[f32]) -> Self {
         Self { 
             x_axis: Float3::from_array(&arr[0..3]), 
             y_axis: Float3::from_array(&arr[3..6]), 
