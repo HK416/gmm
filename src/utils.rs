@@ -182,6 +182,125 @@ pub fn matrix_look_at_rh(eye: Float3, at: Float3, up: Float3) -> Option<Float4x4
     matrix_look_to_rh(eye, dir, up)
 }
 
+/// Create a left-handed coordinate perspective projection matrix with the given `fov_y`, `aspect_ratio`, `z_near`, `z_far`.
+/// - fov_y: radian
+/// - depth range: 0.0 ~ 1.0
+/// 
+/// Returns `None` if the given `z_near` and `z_far` are less than or equal to zero.
+/// 
+#[inline]
+#[must_use]
+pub fn matrix_perspective_lh(fov_y: f32, aspect_ratio: f32, z_near: f32, z_far: f32) -> Option<Float4x4> {
+    if z_near <= 0.0 || z_far <= 0.0 {
+        return None;
+    }
+
+    let (s, c) = (fov_y * 0.5).sin_cos();
+    let h = c / s;
+    let w = h / aspect_ratio;
+    let r = z_far / (z_far - z_near);
+    Some(Float4x4::from_columns(
+        Float4::new(w, 0.0, 0.0, 0.0), 
+        Float4::new(0.0, h, 0.0, 0.0), 
+        Float4::new(0.0, 0.0, r, 1.0), 
+        Float4::new(0.0, 0.0, -r * z_near, 0.0)
+    ))
+}
+
+/// Create a right-handed coordinate perspective projection matrix with the given `fov_y`, `aspect_ratio`, `z_near`, `z_far`.
+/// - fov_y: radian
+/// - depth range: 0.0 ~ 1.0
+/// 
+/// Returns `None` if the given `z_near` and `z_far` are less than or equal to zero.
+/// 
+#[inline]
+#[must_use]
+pub fn matrix_perspective_rh(fov_y: f32, aspect_ratio: f32, z_near: f32, z_far: f32) -> Option<Float4x4> {
+    if z_near <= 0.0 || z_far <= 0.0 {
+        return None;
+    }
+
+    let (s, c) = (fov_y * 0.5).sin_cos();
+    let h = c / s;
+    let w = h / aspect_ratio;
+    let r = z_far / (z_near - z_far);
+    Some(Float4x4::from_columns(
+        Float4::new(w, 0.0, 0.0, 0.0), 
+        Float4::new(0.0, h, 0.0, 0.0), 
+        Float4::new(0.0, 0.0, r, -1.0), 
+        Float4::new(0.0, 0.0, r * z_near, 0.0)
+    ))
+}
+
+/// Create a left-handed coordinate orthographic projection matrix with the given `left`, `right`, `bottom`, `top`, `near`, `far`.
+/// - depth range: 0.0 ~ 1.0
+/// 
+/// 1. If the given `left` and `right` are equal, returns `None`.
+/// 2. If the given `bottom` and `top` are equal, returns `None`.
+/// 3. If the given `near` and `far` are equal, returns `None`.
+/// 
+#[inline]
+#[must_use]
+pub fn matrix_orthographic_lh(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Option<Float4x4> {
+    let mut invalidate = (left - right).abs() <= f32::EPSILON;
+    invalidate |= (bottom - top).abs() <= f32::EPSILON;
+    invalidate |= (near - far).abs() <= f32::EPSILON;
+
+    if invalidate {
+        return None;
+    }
+
+    let recip_width = 1.0 / (right - left);
+    let recip_height = 1.0 / (top - bottom);
+    let recip_depth = 1.0 / (far - near);
+    Some(Float4x4::from_columns(
+        Float4::new(2.0 * recip_width, 0.0, 0.0, 0.0), 
+        Float4::new(0.0, 2.0 * recip_height, 0.0, 0.0), 
+        Float4::new(0.0, 0.0, recip_depth, 0.0), 
+        Float4::new(
+            -(left + right) * recip_width, 
+            -(top + bottom) * recip_height, 
+            -near * recip_depth, 
+            1.0
+        )
+    ))
+}
+
+/// Create a right-handed coordinate orthographic projection matrix with the given `left`, `right`, `bottom`, `top`, `near`, `far`.
+/// - depth range: 0.0 ~ 1.0
+/// 
+/// 1. If the given `left` and `right` are equal, returns `None`.
+/// 2. If the given `bottom` and `top` are equal, returns `None`.
+/// 3. If the given `near` and `far` are equal, returns `None`.
+/// 
+#[inline]
+#[must_use]
+pub fn matrix_orthographic_rh(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Option<Float4x4> {
+    let mut invalidate = (left - right).abs() <= f32::EPSILON;
+    invalidate |= (bottom - top).abs() <= f32::EPSILON;
+    invalidate |= (near - far).abs() <= f32::EPSILON;
+
+    if invalidate {
+        return None;
+    }
+
+    let recip_width = 1.0 / (right - left);
+    let recip_height = 1.0 / (top - bottom);
+    let recip_depth = 1.0 / (near - far);
+    Some(Float4x4::from_columns(
+        Float4::new(2.0 * recip_width, 0.0, 0.0, 0.0), 
+        Float4::new(0.0, 2.0 * recip_height, 0.0, 0.0), 
+        Float4::new(0.0, 0.0, recip_depth, 0.0), 
+        Float4::new(
+            -(left + right) * recip_width, 
+            -(bottom + top) * recip_height, 
+            near * recip_depth, 
+            1.0
+        )
+    ))
+}
+
+
 
 #[cfg(test)]
 mod tests {
@@ -353,6 +472,98 @@ mod tests {
                     let validate = (raw_matrix[idx] - raw_g_matrix[idx]).abs() <= EPSILON;
                     assert!(validate, "invalid matrix look at rh operation (test:{}, this:{}, glam:{})", test, matrix, g_matrix);
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn matrix_perspective_lh_test() {
+        let mut rng = rand::thread_rng();
+        for test in 0..NUM_TEST {
+            let fov_y = rng.gen_range(0.0f32..180.0f32).to_radians();
+            let width = rng.gen_range(800.0f32..1920.0f32);
+            let height = rng.gen_range(600.0..1080.0f32);
+            let aspect_ratio = width / height;
+            let z_near = rng.gen_range(0.001f32..0.1f32);
+            let z_far = rng.gen_range(1.0f32..1000.0f32);
+
+            let matrix = matrix_perspective_lh(fov_y, aspect_ratio, z_near, z_far).unwrap();
+            let g_matrix = glam::Mat4::perspective_lh(fov_y, aspect_ratio, z_near, z_far);
+
+            let raw_matrix = matrix.as_ref();
+            let raw_g_matrix = g_matrix.as_ref();
+            for idx in 0..16 {
+                let validate = (raw_matrix[idx] - raw_g_matrix[idx]).abs() <= EPSILON;
+                assert!(validate, "invalid matrix perspective lh operation! (test:{}, this:{}, glam:{})", test, matrix, g_matrix);
+            }
+        }
+    }
+
+    #[test]
+    fn matrix_perspective_rh_test() {
+        let mut rng = rand::thread_rng();
+        for test in 0..NUM_TEST {
+            let fov_y = rng.gen_range(0.0f32..180.0f32).to_radians();
+            let width = rng.gen_range(800.0f32..1920.0f32);
+            let height = rng.gen_range(600.0..1080.0f32);
+            let aspect_ratio = width / height;
+            let z_near = rng.gen_range(0.001f32..0.1f32);
+            let z_far = rng.gen_range(1.0f32..1000.0f32);
+
+            let matrix = matrix_perspective_rh(fov_y, aspect_ratio, z_near, z_far).unwrap();
+            let g_matrix = glam::Mat4::perspective_rh(fov_y, aspect_ratio, z_near, z_far);
+
+            let raw_matrix = matrix.as_ref();
+            let raw_g_matrix = g_matrix.as_ref();
+            for idx in 0..16 {
+                let validate = (raw_matrix[idx] - raw_g_matrix[idx]).abs() <= EPSILON;
+                assert!(validate, "invalid matrix perspective rh operation! (test:{}, this:{}, glam:{})", test, matrix, g_matrix);
+            }
+        }
+    }
+
+    #[test]
+    fn matrix_orthographic_lh_test() {
+        let mut rng = rand::thread_rng();
+        for test in 0..NUM_TEST {
+            let left = rng.gen_range(0.1f32..100.0f32) * -1.0;
+            let right = rng.gen_range(0.1f32..100.0f32) * 1.0;
+            let bottom = rng.gen_range(0.1f32..100.0f32) * -1.0;
+            let top = rng.gen_range(0.1f32..100.0f32) * 1.0;
+            let near = rng.gen_range(0.001f32..0.1f32);
+            let far = rng.gen_range(1.0f32..1000.0f32);
+
+            let matrix = matrix_orthographic_lh(left, right, bottom, top, near, far).unwrap();
+            let g_matrix = glam::Mat4::orthographic_lh(left, right, bottom, top, near, far);
+
+            let raw_matrix = matrix.as_ref();
+            let raw_g_matrix = g_matrix.as_ref();
+            for idx in 0..16 {
+                let validate = (raw_matrix[idx] - raw_g_matrix[idx]).abs() <= EPSILON;
+                assert!(validate, "invalid matrix orthographic lh operation! (test:{}, this:{}, glam:{})", test, matrix, g_matrix);
+            }
+        }
+    }
+
+    #[test]
+    fn matrix_orthographic_rh_test() {
+        let mut rng = rand::thread_rng();
+        for test in 0..NUM_TEST {
+            let left = rng.gen_range(0.1f32..100.0f32) * -1.0;
+            let right = rng.gen_range(0.1f32..100.0f32) * 1.0;
+            let bottom = rng.gen_range(0.1f32..100.0f32) * -1.0;
+            let top = rng.gen_range(0.1f32..100.0f32) * 1.0;
+            let near = rng.gen_range(0.001f32..0.1f32);
+            let far = rng.gen_range(1.0f32..1000.0f32);
+
+            let matrix = matrix_orthographic_rh(left, right, bottom, top, near, far).unwrap();
+            let g_matrix = glam::Mat4::orthographic_rh(left, right, bottom, top, near, far);
+
+            let raw_matrix = matrix.as_ref();
+            let raw_g_matrix = g_matrix.as_ref();
+            for idx in 0..16 {
+                let validate = (raw_matrix[idx] - raw_g_matrix[idx]).abs() <= EPSILON;
+                assert!(validate, "invalid matrix orthographic rh operation! (test:{}, this:{}, glam:{})", test, matrix, g_matrix);
             }
         }
     }
