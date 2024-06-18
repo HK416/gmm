@@ -249,6 +249,15 @@ pub fn vector_ne(a: Vector, b: Vector) -> Boolean4 {
     unsafe { store_boolean4(vmvnq_u32(vceqq_f32(a, b))) }
 }
 
+/// Returns a vector filled by adding all the elements of the vector.
+#[inline]
+pub fn vector_sum(v: Vector) -> Vector {
+    unsafe {
+        let v = vpaddq_f32(v, v); // [x+y, z+w, x+y, z+w]
+        vpaddq_f32(v, v) // [x+y+z+w, x+y+z+w, x+y+z+w, x+y+z+w]
+    }
+}
+
 /// Transformation of the given vector.
 #[inline]
 pub fn vector_transform(m: Matrix, v: Vector) -> Vector {
