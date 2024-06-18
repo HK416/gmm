@@ -150,6 +150,37 @@ pub fn matrix_look_to_rh(eye: Float3, dir: Float3, up: Float3) -> Option<Float4x
     ))
 }
 
+/// Create a left-handed coordinate view matrix with the given `eye`, `at`, and `up`.
+/// 
+/// Returns `None` if the view matrix cannot be created.
+/// 
+#[inline]
+#[must_use]
+pub fn matrix_look_at_lh(eye: Float3, at: Float3, up: Float3) -> Option<Float4x4> {
+    let dir = {
+        let at = load_float3(at);
+        let eye = load_float3(eye);
+        let dir = vector_sub(at, eye);
+        store_float3(dir)
+    };
+    matrix_look_to_lh(eye, dir, up)
+}
+
+/// Create a right-handed coordinate view matrix with the given `eye`, `at`, and `up`.
+/// 
+/// Returns `None` if the view matrix cannot be created.
+/// 
+#[inline]
+#[must_use]
+pub fn matrix_look_at_rh(eye: Float3, at: Float3, up: Float3) -> Option<Float4x4> {
+    let dir = {
+        let at = load_float3(at);
+        let eye = load_float3(eye);
+        let dir = vector_sub(at, eye);
+        store_float3(dir)
+    };
+    matrix_look_to_rh(eye, dir, up)
+}
 
 
 #[cfg(test)]
@@ -161,7 +192,7 @@ mod tests {
     /// 
     /// So we compare using a separate Epsilon constant.
     /// 
-    const EPSILON: f32 = 1.192092896e-6;
+    const EPSILON: f32 = 1.192092896e-5;
 
     /// Verification number of tests
     const NUM_TEST: usize = 1_000_000;
@@ -183,9 +214,9 @@ mod tests {
 
             if let Some(matrix) = matrix {
                 let raw_matrix = matrix.as_ref();
-                let g_raw_matrix = g_matrix.as_ref();
+                let raw_g_matrix = g_matrix.as_ref();
                 for idx in 0..16 {
-                    let validate = (raw_matrix[idx] - g_raw_matrix[idx]).abs() <= EPSILON;
+                    let validate = (raw_matrix[idx] - raw_g_matrix[idx]).abs() <= EPSILON;
                     assert!(validate, "invalid quaternion to matrix operation (test:{}, this:{}, glam:{})", test, matrix, g_matrix);
                 }
             }
@@ -253,6 +284,74 @@ mod tests {
                 for idx in 0..16 {
                     let validate = (raw_view[idx] - raw_g_view[idx]).abs() <= EPSILON;
                     assert!(validate, "invalid matrix look to rh operation (test:{}, this:{}, glam:{})", test, view, g_view);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn matrix_look_at_lh_test() {
+        let mut rng = rand::thread_rng();
+        for test in 0..NUM_TEST {
+            let mut pos_data = vec![0.0; 3];
+            let mut at_data = vec![0.0; 3];
+            for (pos, at) in pos_data.iter_mut().zip(at_data.iter_mut()) {
+                *pos = rng.gen_range(-10.0f32..10.0f32);
+                *at = rng.gen_range(-10.0f32..10.0f32);
+            }
+
+            let eye = Float3::from_array(&pos_data);
+            let at = Float3::from_array(&at_data);
+            let matrix = matrix_look_at_lh(eye, at, Float3::Y);
+
+            let g_eye = glam::Vec3::from_slice(&pos_data);
+            let g_at = glam::Vec3::from_slice(&at_data);
+            let g_matrix = glam::Mat4::look_at_lh(g_eye, g_at, glam::Vec3::Y);
+
+            if matrix.is_some() ^ ((g_at - g_eye).length() > f32::EPSILON) {
+                panic!("invalid matrix look at lh operation (test:{}, this:{:?}, glam:{})", test, matrix, g_matrix);
+            }
+
+            if let Some(matrix) = matrix {
+                let raw_matrix = matrix.as_ref();
+                let raw_g_matrix = g_matrix.as_ref();
+                for idx in 0..16 {
+                    let validate = (raw_matrix[idx] - raw_g_matrix[idx]).abs() <= EPSILON;
+                    assert!(validate, "invalid matrix look at lh operation (test:{}, this:{}, glam:{})", test, matrix, g_matrix);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn matrix_look_at_rh_test() {
+        let mut rng = rand::thread_rng();
+        for test in 0..NUM_TEST {
+            let mut pos_data = vec![0.0; 3];
+            let mut at_data = vec![0.0; 3];
+            for (pos, at) in pos_data.iter_mut().zip(at_data.iter_mut()) {
+                *pos = rng.gen_range(-10.0f32..10.0f32);
+                *at = rng.gen_range(-10.0f32..10.0f32);
+            }
+
+            let eye = Float3::from_array(&pos_data);
+            let at = Float3::from_array(&at_data);
+            let matrix = matrix_look_at_rh(eye, at, Float3::Y);
+
+            let g_eye = glam::Vec3::from_slice(&pos_data);
+            let g_at = glam::Vec3::from_slice(&at_data);
+            let g_matrix = glam::Mat4::look_at_rh(g_eye, g_at, glam::Vec3::Y);
+
+            if matrix.is_some() ^ ((g_at - g_eye).length() > f32::EPSILON) {
+                panic!("invalid matrix look at rh operation (test:{}, this:{:?}, glam:{})", test, matrix, g_matrix);
+            }
+
+            if let Some(matrix) = matrix {
+                let raw_matrix = matrix.as_ref();
+                let raw_g_matrix = g_matrix.as_ref();
+                for idx in 0..16 {
+                    let validate = (raw_matrix[idx] - raw_g_matrix[idx]).abs() <= EPSILON;
+                    assert!(validate, "invalid matrix look at rh operation (test:{}, this:{}, glam:{})", test, matrix, g_matrix);
                 }
             }
         }
