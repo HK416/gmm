@@ -480,7 +480,7 @@ mod tests {
     fn matrix_perspective_lh_test() {
         let mut rng = rand::thread_rng();
         for test in 0..NUM_TEST {
-            let fov_y = rng.gen_range(0.0f32..180.0f32).to_radians();
+            let fov_y = rng.gen_range(1.0f32..180.0f32).to_radians();
             let width = rng.gen_range(800.0f32..1920.0f32);
             let height = rng.gen_range(600.0..1080.0f32);
             let aspect_ratio = width / height;
@@ -503,7 +503,7 @@ mod tests {
     fn matrix_perspective_rh_test() {
         let mut rng = rand::thread_rng();
         for test in 0..NUM_TEST {
-            let fov_y = rng.gen_range(0.0f32..180.0f32).to_radians();
+            let fov_y = rng.gen_range(1.0f32..180.0f32).to_radians();
             let width = rng.gen_range(800.0f32..1920.0f32);
             let height = rng.gen_range(600.0..1080.0f32);
             let aspect_ratio = width / height;

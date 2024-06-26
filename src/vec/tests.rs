@@ -499,3 +499,33 @@ fn matrix_determinant_test() {
         assert!(validate, "invalid matrix determinant operation! (test:{}, this:{}, glam:{})", test, det, g_det);
     }
 }
+
+// FIXME: When comparing with the `glam` library, there are cases where the result is significantly different.
+//
+// #[test]
+// fn matrix_inverse_test() {
+//     let mut rng = rand::thread_rng();
+//     for test in 0..NUM_TEST {
+//         let arr: [f32; 16] = rng.gen();
+//         let a = Float4x4::from_column_array(&arr);
+//         let m_a = load_float4x4(a);
+//         let m_inv_a = matrix_inverse(m_a);
+//         let inv_a = m_inv_a.map(|m| store_float4x4(m));
+
+//         let g_a = glam::Mat4::from_cols_array(&arr);
+//         let g_inv_a = g_a.inverse();
+
+//         if m_inv_a.is_some() ^ (g_a.determinant().abs() > f32::EPSILON) {
+//             panic!("invalid matrix inverse operation! (test:{}, this:{:?}, glam:{})", test, m_inv_a, g_inv_a);
+//         }
+
+//         if let Some(inv_a) = inv_a {
+//             let raw_inv = inv_a.as_ref();
+//             let raw_g_inv = g_inv_a.as_ref();
+//             for idx in 0..16 {
+//                 let validate = (raw_inv[idx] - raw_g_inv[idx]).abs() <= 1.1920929;
+//                 assert!(validate, "invalid matrix inverse operation! (test:{}-{}, this:{}, glam:{})", test, idx, inv_a, g_inv_a);
+//             }
+//         }
+//     }
+// }
