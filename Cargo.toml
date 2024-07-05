@@ -10,6 +10,10 @@ license = "LICENSE"
 
 [dev-dependencies]
 rand = "0.8.*"
-glam = { version = "0.28.*", features = ["scalar-math"] } # Used to evaluate whether it is functioning properly.
+glam = "0.28.*" # Used to evaluate whether it is functioning properly.
 
 [dependencies]
+
+
+[features]
+scalar-math = [ "glam/scalar-math" ]

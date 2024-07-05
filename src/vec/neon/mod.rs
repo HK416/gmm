@@ -917,100 +917,54 @@ pub fn matrix_determinant(m: Matrix) -> f32 {
     }
 }
 
+
 /// inverse of a matrix.
 /// 
 /// If the inverse of a matrix cannot be calculated, returns `None`.
 /// 
 #[must_use]
 pub fn matrix_inverse(m: Matrix) -> Option<Matrix> {
-    const ONE_NEG: [f32; 2] = [1.0, -1.0];
-    const NEG_ONE: [f32; 2] = [-1.0, 1.0];
+    // Reference: glm/detail/func_matrix.inl
+    //
     const ONE_NEG_ONE_NEG: [f32; 4] = [1.0, -1.0, 1.0, -1.0];
     const NEG_ONE_NEG_ONE: [f32; 4] = [-1.0, 1.0, -1.0, 1.0];
 
     unsafe {
         let m00_m01 = vget_low_f32(m[0]);
-        let m01_m00 = vext_f32::<0b01>(m00_m01, m00_m01);
-        let m00_m00 = vext_f32::<0b01>(m01_m00, m00_m01);
         let m02_m03 = vget_high_f32(m[0]);
-        let m01_m02 = vext_f32::<0b01>(m00_m01, m02_m03);
+        let m01_m00 = vext_f32::<0b01>(m00_m01, m00_m01);
         let m03_m02 = vext_f32::<0b01>(m02_m03, m02_m03);
+        let m00_m00 = vext_f32::<0b01>(m01_m00, m00_m01);
+        let m01_m01 = vext_f32::<0b01>(m00_m01, m01_m00);
+        let m02_m02 = vext_f32::<0b01>(m03_m02, m02_m03);
         let m03_m03 = vext_f32::<0b01>(m02_m03, m03_m02);
 
         let m10_m11 = vget_low_f32(m[1]);
-        let m11_m10 = vext_f32::<0b01>(m10_m11, m10_m11);
-        let m10_m10 = vext_f32::<0b01>(m11_m10, m10_m11);
         let m12_m13 = vget_high_f32(m[1]);
-        let m11_m12 = vext_f32::<0b01>(m10_m11, m12_m13);
+        let m11_m10 = vext_f32::<0b01>(m10_m11, m10_m11);
         let m13_m12 = vext_f32::<0b01>(m12_m13, m12_m13);
+        let m10_m10 = vext_f32::<0b01>(m11_m10, m10_m11);
+        let m11_m11 = vext_f32::<0b01>(m10_m11, m11_m10);
+        let m12_m12 = vext_f32::<0b01>(m13_m12, m12_m13);
         let m13_m13 = vext_f32::<0b01>(m12_m13, m13_m12);
 
         let m20_m21 = vget_low_f32(m[2]);
-        let m21_m20 = vext_f32::<0b01>(m20_m21, m20_m21);
-        let m20_m20 = vext_f32::<0b01>(m21_m20, m20_m21);
         let m22_m23 = vget_high_f32(m[2]);
+        let m21_m20 = vext_f32::<0b01>(m20_m21, m20_m21);
         let m23_m22 = vext_f32::<0b01>(m22_m23, m22_m23);
-        let m22_m21 = vext_f32::<0b01>(m23_m22, m21_m20);
+        let m20_m20 = vext_f32::<0b01>(m21_m20, m20_m21);
+        let m21_m21 = vext_f32::<0b01>(m20_m21, m21_m20);
+        let m22_m22 = vext_f32::<0b01>(m23_m22, m22_m23);
         let m23_m23 = vext_f32::<0b01>(m22_m23, m23_m22);
 
         let m30_m31 = vget_low_f32(m[3]);
-        let m31_m30 = vext_f32::<0b01>(m30_m31, m30_m31);
-        let m30_m30 = vext_f32::<0b01>(m31_m30, m30_m31);
         let m32_m33 = vget_high_f32(m[3]);
+        let m31_m30 = vext_f32::<0b01>(m30_m31, m30_m31);
         let m33_m32 = vext_f32::<0b01>(m32_m33, m32_m33);
-        let m32_m31 = vext_f32::<0b01>(m33_m32, m31_m30);
+        let m30_m30 = vext_f32::<0b01>(m31_m30, m30_m31);
+        let m31_m31 = vext_f32::<0b01>(m30_m31, m31_m30);
+        let m32_m32 = vext_f32::<0b01>(m33_m32, m32_m33);
         let m33_m33 = vext_f32::<0b01>(m32_m33, m33_m32);
-
-        let m00_m00_m00_m01 = vcombine_f32(m00_m00, m00_m01);
-        let m11_m12_m13_m12 = vcombine_f32(m11_m12, m13_m12);
-        let m10_m10_m10_m11 = vcombine_f32(m10_m10, m10_m11);
-        let m01_m02_m03_m02 = vcombine_f32(m01_m02, m03_m02);
-        let a = vmulq_f32(m00_m00_m00_m01, m11_m12_m13_m12);
-        let b = vmulq_f32(m10_m10_m10_m11, m01_m02_m03_m02);
-        let t0 = vsubq_f32(a, b);
-
-        let m01_m02_m22_m21 = vcombine_f32(m01_m02, m22_m21);
-        let m13_m13_m33_m33 = vcombine_f32(m13_m13, m33_m33);
-        let m11_m12_m32_m31 = vcombine_f32(m11_m12, m32_m31);
-        let m03_m03_m23_m23 = vcombine_f32(m03_m03, m23_m23);
-        let a = vmulq_f32(m01_m02_m22_m21, m13_m13_m33_m33);
-        let b = vmulq_f32(m11_m12_m32_m31, m03_m03_m23_m23);
-        let t1 = vsubq_f32(a, b);
-
-        let m21_m20_m20_m20 = vcombine_f32(m21_m20, m20_m20);
-        let m32_m33_m32_m31 = vcombine_f32(m32_m33, m32_m31);
-        let m31_m30_m30_m30 = vcombine_f32(m31_m30, m30_m30);
-        let m22_m23_m22_m21 = vcombine_f32(m22_m23, m22_m21);
-        let a = vmulq_f32(m21_m20_m20_m20, m32_m33_m32_m31);
-        let b = vmulq_f32(m31_m30_m30_m30, m22_m23_m22_m21);
-        let t2 = vsubq_f32(a, b);
-
-        let mask = vld1_f32(&ONE_NEG as *const f32);
-        let t00_t01 = vget_low_f32(t0);
-        let t12_t13 = vget_high_f32(t1);
-        let r0 = vmul_f32(t00_t01, t12_t13);
-        let r0 = vmul_f32(r0, mask);
-        
-        let t02_t03 = vget_high_f32(t0);
-        let t20_t21 = vget_low_f32(t2);
-        let r1 = vmul_f32(t02_t03, t20_t21);
-
-        let mask = vld1_f32(&NEG_ONE as *const f32);
-        let t10_t11 = vget_low_f32(t1);
-        let t22_t23 = vget_high_f32(t2);
-        let r2 = vmul_f32(t10_t11, t22_t23);
-        let r2 = vmul_f32(r2, mask);
-
-        let det = vadd_f32(r0, r1);
-        let det = vadd_f32(det, r2);
-        let det = vpadd_f32(det, det);
-        let det = vget_lane_f32::<0b00>(det);
-
-        if det.abs() <= f32::EPSILON {
-            return None;
-        }
-
-        let recip_det = det.recip();
 
         let m10_m00 = vext_f32::<0b01>(m11_m10, m00_m01);
         let m11_m01 = vext_f32::<0b01>(m10_m11, m01_m00);
@@ -1021,96 +975,76 @@ pub fn matrix_inverse(m: Matrix) -> Option<Matrix> {
         let m32_m22 = vext_f32::<0b01>(m33_m32, m22_m23);
         let m33_m23 = vext_f32::<0b01>(m32_m33, m23_m22);
 
-        let t01_t00 = vext_f32::<0b01>(t00_t01, t00_t01);
-        let t03_t02 = vext_f32::<0b01>(t02_t03, t02_t03);
-        let t11_t10 = vext_f32::<0b01>(t10_t11, t10_t11);
-        let t13_t12 = vext_f32::<0b01>(t12_t13, t12_t13);
-        let t21_t20 = vext_f32::<0b01>(t20_t21, t20_t21);
-        let t23_t22 = vext_f32::<0b01>(t22_t23, t22_t23);
-        
-        let t00_t00 = vext_f32::<0b01>(t01_t00, t00_t01);
-        let t01_t01 = vext_f32::<0b01>(t00_t01, t01_t00);
-        let t02_t02 = vext_f32::<0b01>(t03_t02, t02_t03);
-        let t03_t03 = vext_f32::<0b01>(t02_t03, t03_t02);
-        let t10_t10 = vext_f32::<0b01>(t11_t10, t10_t11);
-        let t11_t11 = vext_f32::<0b01>(t10_t11, t11_t10);
-        let t12_t12 = vext_f32::<0b01>(t13_t12, t12_t13);
-        let t13_t13 = vext_f32::<0b01>(t12_t13, t13_t12);
-        let t20_t20 = vext_f32::<0b01>(t21_t20, t20_t21);
-        let t21_t21 = vext_f32::<0b01>(t20_t21, t21_t20);
-        let t22_t22 = vext_f32::<0b01>(t23_t22, t22_t23);
-        let t23_t23 = vext_f32::<0b01>(t22_t23, t23_t22);
+        let m20_m20_m10_m10 = vcombine_f32(m20_m20, m10_m10);
+        let m21_m21_m11_m11 = vcombine_f32(m21_m21, m11_m11);
+        let m22_m22_m12_m12 = vcombine_f32(m22_m22, m12_m12);
+        let m23_m23_m13_m13 = vcombine_f32(m23_m23, m13_m13);
+        let m30_m30_m30_m20 = vcombine_f32(m30_m30, m30_m20);
+        let m31_m31_m31_m21 = vcombine_f32(m31_m31, m31_m21);
+        let m32_m32_m32_m22 = vcombine_f32(m32_m32, m32_m22);
+        let m33_m33_m33_m23 = vcombine_f32(m33_m33, m33_m23);
+
+
+
+        let a = vmulq_f32(m22_m22_m12_m12, m33_m33_m33_m23);
+        let b = vmulq_f32(m32_m32_m32_m22, m23_m23_m13_m13);
+        let fac0 = vsubq_f32(a, b);
+
+        let a = vmulq_f32(m21_m21_m11_m11, m33_m33_m33_m23);
+        let b = vmulq_f32(m31_m31_m31_m21, m23_m23_m13_m13);
+        let fac1 = vsubq_f32(a, b);
+
+        let a = vmulq_f32(m21_m21_m11_m11, m32_m32_m32_m22);
+        let b = vmulq_f32(m31_m31_m31_m21, m22_m22_m12_m12);
+        let fac2 = vsubq_f32(a, b);
+
+        let a = vmulq_f32(m20_m20_m10_m10, m33_m33_m33_m23);
+        let b = vmulq_f32(m30_m30_m30_m20, m23_m23_m13_m13);
+        let fac3 = vsubq_f32(a, b);
+
+        let a = vmulq_f32(m20_m20_m10_m10, m32_m32_m32_m22);
+        let b = vmulq_f32(m30_m30_m30_m20, m22_m22_m12_m12);
+        let fac4 = vsubq_f32(a, b);
+
+        let a = vmulq_f32(m20_m20_m10_m10, m31_m31_m31_m21);
+        let b = vmulq_f32(m30_m30_m30_m20, m21_m21_m11_m11);
+        let fac5 = vsubq_f32(a, b);
+
+        let vec0 = vcombine_f32(m10_m00, m00_m00);
+        let vec1 = vcombine_f32(m11_m01, m01_m01);
+        let vec2 = vcombine_f32(m12_m02, m02_m02);
+        let vec3 = vcombine_f32(m13_m03, m03_m03);
+
+        let inv0 = vaddq_f32(vsubq_f32(vmulq_f32(vec1, fac0), vmulq_f32(vec2, fac1)), vmulq_f32(vec3, fac2));
+        let inv1 = vaddq_f32(vsubq_f32(vmulq_f32(vec0, fac0), vmulq_f32(vec2, fac3)), vmulq_f32(vec3, fac4));
+        let inv2 = vaddq_f32(vsubq_f32(vmulq_f32(vec0, fac1), vmulq_f32(vec1, fac3)), vmulq_f32(vec3, fac5));
+        let inv3 = vaddq_f32(vsubq_f32(vmulq_f32(vec0, fac2), vmulq_f32(vec1, fac4)), vmulq_f32(vec2, fac5));
 
         let one_neg_one_neg = vld1q_f32(&ONE_NEG_ONE_NEG as *const f32);
         let neg_one_neg_one = vld1q_f32(&NEG_ONE_NEG_ONE as *const f32);
+        let inverse = [
+            vmulq_f32(inv0, one_neg_one_neg), 
+            vmulq_f32(inv1, neg_one_neg_one), 
+            vmulq_f32(inv2, one_neg_one_neg), 
+            vmulq_f32(inv3, neg_one_neg_one), 
+        ];
 
-        let m10_m00_m30_m20 = vcombine_f32(m10_m00, m30_m20);
-        let m11_m01_m31_m21 = vcombine_f32(m11_m01, m31_m21);
-        let m12_m02_m32_m22 = vcombine_f32(m12_m02, m32_m22);
-        let m13_m03_m33_m23 = vcombine_f32(m13_m03, m33_m23);
+        let inv00_inv10 = vget_low_f32(vtrnq_f32(inverse[0], inverse[1]).0); 
+        let inv20_inv30 = vget_low_f32(vtrnq_f32(inverse[2], inverse[3]).0);
+        let row0 = vcombine_f32(inv00_inv10, inv20_inv30);
+        let det = vmulq_f32(m[0], row0);
+        let det = vector_sum(det);
+        let det = vgetq_lane_f32::<0b00>(det);
+        if det.abs() <= f32::EPSILON {
+            return None;
+        }
 
-        let t12_t12_t11_t11 = vcombine_f32(t12_t12, t11_t11);
-        let t13_t13_t10_t10 = vcombine_f32(t13_t13, t10_t10);
-        let t20_t20_t03_t03 = vcombine_f32(t20_t20, t03_t03);
-        let t21_t21_t02_t02 = vcombine_f32(t21_t21, t02_t02);
-        let t22_t22_t01_t01 = vcombine_f32(t22_t22, t01_t01);
-        let t23_t23_t00_t00 = vcombine_f32(t23_t23, t00_t00);
-
-        let r0 = vmulq_f32(m11_m01_m31_m21, t12_t12_t11_t11);
-        let r0 = vmulq_f32(r0, one_neg_one_neg);
-
-        let r1 = vmulq_f32(m12_m02_m32_m22, t13_t13_t10_t10);
-        let r1 = vmulq_f32(r1, neg_one_neg_one);
-
-        let r2 = vmulq_f32(m13_m03_m33_m23, t20_t20_t03_t03);
-        let r2 = vmulq_f32(r2, one_neg_one_neg);
-
-        let col0 = vaddq_f32(r0, r1);
-        let col0 = vaddq_f32(col0, r2);
-        let col0 = vmulq_n_f32(col0, recip_det);
-
-
-        let r0 = vmulq_f32(m10_m00_m30_m20, t12_t12_t11_t11);
-        let r0 = vmulq_f32(r0, neg_one_neg_one);
-
-        let r1 = vmulq_f32(m12_m02_m32_m22, t21_t21_t02_t02);
-        let r1 = vmulq_f32(r1, one_neg_one_neg);
-
-        let r2 = vmulq_f32(m13_m03_m33_m23, t22_t22_t01_t01);
-        let r2 = vmulq_f32(r2, neg_one_neg_one);
-
-        let col1 = vaddq_f32(r0, r1);
-        let col1 = vaddq_f32(col1, r2);
-        let col1 = vmulq_n_f32(col1, recip_det);
-
-        
-        let r0 = vmulq_f32(m10_m00_m30_m20, t13_t13_t10_t10);
-        let r0 = vmulq_f32(r0, one_neg_one_neg);
-
-        let r1 = vmulq_f32(m11_m01_m31_m21, t21_t21_t02_t02);
-        let r1 = vmulq_f32(r1, neg_one_neg_one);
-
-        let r2 = vmulq_f32(m13_m03_m33_m23, t23_t23_t00_t00);
-        let r2 = vmulq_f32(r2, one_neg_one_neg);
-
-        let col2 = vaddq_f32(r0, r1);
-        let col2 = vaddq_f32(col2, r2);
-        let col2 = vmulq_n_f32(col2, recip_det);
-
-
-        let r0 = vmulq_f32(m10_m00_m30_m20, t20_t20_t03_t03);
-        let r0 = vmulq_f32(r0, neg_one_neg_one);
-
-        let r1 = vmulq_f32(m11_m01_m31_m21, t22_t22_t01_t01);
-        let r1 = vmulq_f32(r1, one_neg_one_neg);
-
-        let r2 = vmulq_f32(m12_m02_m32_m22, t23_t23_t00_t00);
-        let r2 = vmulq_f32(r2, neg_one_neg_one);
-
-        let col3 = vaddq_f32(r0, r1);
-        let col3 = vaddq_f32(col3, r2);
-        let col3 = vmulq_n_f32(col3, recip_det);
-
-        Some([col0, col1, col2, col3])
+        let recip_det = det.recip();
+        Some([
+            vmulq_n_f32(inverse[0], recip_det), 
+            vmulq_n_f32(inverse[1], recip_det), 
+            vmulq_n_f32(inverse[2], recip_det), 
+            vmulq_n_f32(inverse[3], recip_det)
+        ])
     }
 }
