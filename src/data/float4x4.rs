@@ -1,4 +1,5 @@
 use core::fmt;
+use core::ops;
 
 use super::bool4::Boolean4;
 use super::float3x3::Float3x3;
@@ -98,6 +99,33 @@ impl AsMut<[f32; 16]> for Float4x4 {
     #[inline]
     fn as_mut(&mut self) -> &mut [f32; 16] {
         unsafe { &mut *(self as *mut Self as *mut [f32; 16]) }
+    }
+}
+
+impl ops::Index<usize> for Float4x4 {
+    type Output = Float4;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x_axis, 
+            1 => &self.y_axis,
+            2 => &self.z_axis,
+            3 => &self.w_axis,
+            _ => panic!("index out of range!")
+        }
+    }
+}
+
+impl ops::IndexMut<usize> for Float4x4 {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x_axis,
+            1 => &mut self.y_axis,
+            2 => &mut self.z_axis,
+            3 => &mut self.w_axis,
+            _ => panic!("index out of range!")
+        }
     }
 }
 
