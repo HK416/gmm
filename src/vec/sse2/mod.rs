@@ -834,55 +834,80 @@ pub fn matrix_determinant(m: Matrix) -> f32 {
 /// 
 #[must_use]
 pub fn matrix_inverse(m: Matrix) -> Option<Matrix> {
-    const ZERO: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
+    // Reference: glm/detail/func_matrix.inl
+    //
+    const ONE_ONE_ONE_ONE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
     const ONE_NEG_ONE_NEG: [f32; 4] = [1.0, -1.0, 1.0, -1.0];
     const NEG_ONE_NEG_ONE: [f32; 4] = [-1.0, 1.0, -1.0, 1.0];
 
     unsafe {
-        let zero = _mm_load_ps(&ZERO as *const f32);
+        let m20_m20_m10_m10 = _mm_shuffle_ps::<0b_00_00_00_00>(m[2], m[1]);
+        let m21_m21_m11_m11 = _mm_shuffle_ps::<0b_01_01_01_01>(m[2], m[1]);
+        let m22_m22_m12_m12 = _mm_shuffle_ps::<0b_10_10_10_10>(m[2], m[1]);
+        let m23_m23_m13_m13 = _mm_shuffle_ps::<0b_11_11_11_11>(m[2], m[1]);
+        let m30_m30_m20_m20 = _mm_shuffle_ps::<0b_00_00_00_00>(m[3], m[2]);
+        let m31_m31_m21_m21 = _mm_shuffle_ps::<0b_01_01_01_01>(m[3], m[2]);
+        let m32_m32_m22_m22 = _mm_shuffle_ps::<0b_10_10_10_10>(m[3], m[2]);
+        let m33_m33_m23_m23 = _mm_shuffle_ps::<0b_11_11_11_11>(m[3], m[2]);
+
+        let m30_m30_m30_m20 = _mm_shuffle_ps::<0b_10_00_00_00>(m30_m30_m20_m20, m30_m30_m20_m20);
+        let m31_m31_m31_m21 = _mm_shuffle_ps::<0b_10_00_00_00>(m31_m31_m21_m21, m31_m31_m21_m21);
+        let m32_m32_m32_m22 = _mm_shuffle_ps::<0b_10_00_00_00>(m32_m32_m22_m22, m32_m32_m22_m22);
+        let m33_m33_m33_m23 = _mm_shuffle_ps::<0b_10_00_00_00>(m33_m33_m23_m23, m33_m33_m23_m23);
+
+
+        let a = _mm_mul_ps(m22_m22_m12_m12, m33_m33_m33_m23);
+        let b = _mm_mul_ps(m32_m32_m32_m22, m23_m23_m13_m13);
+        let fac0 = _mm_sub_ps(a, b);
+
+        let a = _mm_mul_ps(m21_m21_m11_m11, m33_m33_m33_m23);
+        let b = _mm_mul_ps(m31_m31_m31_m21, m23_m23_m13_m13);
+        let fac1 = _mm_sub_ps(a, b);
+
+        let a = _mm_mul_ps(m21_m21_m11_m11, m32_m32_m32_m22);
+        let b = _mm_mul_ps(m31_m31_m31_m21, m22_m22_m12_m12);
+        let fac2 = _mm_sub_ps(a, b);
+
+        let a = _mm_mul_ps(m20_m20_m10_m10, m33_m33_m33_m23);
+        let b = _mm_mul_ps(m30_m30_m30_m20, m23_m23_m13_m13);
+        let fac3 = _mm_sub_ps(a, b);
+
+        let a = _mm_mul_ps(m20_m20_m10_m10, m32_m32_m32_m22);
+        let b = _mm_mul_ps(m30_m30_m30_m20, m22_m22_m12_m12);
+        let fac4 = _mm_sub_ps(a, b);
+
+        let a = _mm_mul_ps(m20_m20_m10_m10, m31_m31_m31_m21);
+        let b = _mm_mul_ps(m30_m30_m30_m20, m21_m21_m11_m11);
+        let fac5 = _mm_sub_ps(a, b);
+
+
+        let m00_m01_m10_m11 = _mm_shuffle_ps::<0b_01_00_01_00>(m[0], m[1]);
+        let m02_m03_m12_m13 = _mm_shuffle_ps::<0b_11_10_11_10>(m[0], m[1]);
+        let vec0 = _mm_shuffle_ps::<0b_00_00_00_10>(m00_m01_m10_m11, m00_m01_m10_m11);
+        let vec1 = _mm_shuffle_ps::<0b_01_01_01_11>(m00_m01_m10_m11, m00_m01_m10_m11);
+        let vec2 = _mm_shuffle_ps::<0b_00_00_00_10>(m02_m03_m12_m13, m02_m03_m12_m13);
+        let vec3 = _mm_shuffle_ps::<0b_01_01_01_11>(m02_m03_m12_m13, m02_m03_m12_m13);
+
+
+        let inv0 = _mm_add_ps(_mm_sub_ps(_mm_mul_ps(vec1, fac0), _mm_mul_ps(vec2, fac1)), _mm_mul_ps(vec3, fac2));
+        let inv1 = _mm_add_ps(_mm_sub_ps(_mm_mul_ps(vec0, fac0), _mm_mul_ps(vec2, fac3)), _mm_mul_ps(vec3, fac4));
+        let inv2 = _mm_add_ps(_mm_sub_ps(_mm_mul_ps(vec0, fac1), _mm_mul_ps(vec1, fac3)), _mm_mul_ps(vec3, fac5));
+        let inv3 = _mm_add_ps(_mm_sub_ps(_mm_mul_ps(vec0, fac2), _mm_mul_ps(vec1, fac4)), _mm_mul_ps(vec2, fac5));
+
+
         let one_neg_one_neg = _mm_load_ps(&ONE_NEG_ONE_NEG as *const f32);
         let neg_one_neg_one = _mm_load_ps(&NEG_ONE_NEG_ONE as *const f32);
+        let inverse = [
+            _mm_mul_ps(inv0, one_neg_one_neg), 
+            _mm_mul_ps(inv1, neg_one_neg_one), 
+            _mm_mul_ps(inv2, one_neg_one_neg), 
+            _mm_mul_ps(inv3, neg_one_neg_one) 
+        ];
 
-        let m00_m00_m00_m01 = _mm_shuffle_ps::<0b_01_00_00_00>(m[0], m[0]);
-        let m11_m12_m13_m12 = _mm_shuffle_ps::<0b_10_11_10_01>(m[1], m[1]);
-        let m10_m10_m10_m11 = _mm_shuffle_ps::<0b_01_00_00_00>(m[1], m[1]);
-        let m01_m02_m03_m02 = _mm_shuffle_ps::<0b_10_11_10_01>(m[0], m[0]);
-        let a = _mm_mul_ps(m00_m00_m00_m01, m11_m12_m13_m12);
-        let b = _mm_mul_ps(m10_m10_m10_m11, m01_m02_m03_m02);
-        let t0 = _mm_sub_ps(a, b);
-
-        let m01_m02_m22_m21 = _mm_shuffle_ps::<0b_01_10_10_01>(m[0], m[2]);
-        let m13_m13_m33_m33 = _mm_shuffle_ps::<0b_11_11_11_11>(m[1], m[3]);
-        let m11_m12_m32_m31 = _mm_shuffle_ps::<0b_01_10_10_01>(m[1], m[3]);
-        let m03_m03_m23_m23 = _mm_shuffle_ps::<0b_11_11_11_11>(m[0], m[2]);
-        let a = _mm_mul_ps(m01_m02_m22_m21, m13_m13_m33_m33);
-        let b = _mm_mul_ps(m11_m12_m32_m31, m03_m03_m23_m23);
-        let t1 = _mm_sub_ps(a, b);
-
-        let m21_m20_m20_m20 = _mm_shuffle_ps::<0b_00_00_00_01>(m[2], m[2]);
-        let m32_m33_m32_m31 = _mm_shuffle_ps::<0b_01_10_11_10>(m[3], m[3]);
-        let m31_m30_m30_m30 = _mm_shuffle_ps::<0b_00_00_00_01>(m[3], m[3]);
-        let m22_m23_m22_m21 = _mm_shuffle_ps::<0b_01_10_11_10>(m[2], m[2]);
-        let a = _mm_mul_ps(m21_m20_m20_m20, m32_m33_m32_m31);
-        let b = _mm_mul_ps(m31_m30_m30_m30, m22_m23_m22_m21);
-        let t2 = _mm_sub_ps(a, b);
-
-        let t00_t01 = _mm_shuffle_ps::<0b_00_00_01_00>(t0, zero);
-        let t12_t13 = _mm_shuffle_ps::<0b_00_00_11_10>(t1, zero);
-        let r0 = _mm_mul_ps(t00_t01, t12_t13);
-        let r0 = _mm_mul_ps(r0, one_neg_one_neg);
-
-        let t02_t03 = _mm_shuffle_ps::<0b_00_00_11_10>(t0, zero);
-        let t20_t21 = _mm_shuffle_ps::<0b_00_00_01_00>(t2, zero);
-        let r1 = _mm_mul_ps(t02_t03, t20_t21);
-
-        let t10_t11 = _mm_shuffle_ps::<0b_00_00_01_00>(t1, zero);
-        let t22_t23 = _mm_shuffle_ps::<0b_00_00_11_10>(t2, zero);
-        let r2 = _mm_mul_ps(t10_t11, t22_t23);
-        let r2 = _mm_mul_ps(r2, neg_one_neg_one);
-
-        let det = _mm_add_ps(r0, r1);
-        let det = _mm_add_ps(det, r2);
+        let m00_m00_m10_m10 = _mm_shuffle_ps::<0b_00_00_00_00>(inverse[0], inverse[1]);
+        let m20_m20_m30_m30 = _mm_shuffle_ps::<0b_00_00_00_00>(inverse[2], inverse[3]);
+        let row0 = _mm_shuffle_ps::<0b_10_00_10_00>(m00_m00_m10_m10, m20_m20_m30_m30);
+        let det = _mm_mul_ps(m[0], row0);
         let det = vector_sum(det);
         let val = _mm_cvtss_f32(det);
 
@@ -890,86 +915,13 @@ pub fn matrix_inverse(m: Matrix) -> Option<Matrix> {
             return None;
         }
 
-        let m00_m01_m10_m11 = _mm_shuffle_ps::<0b_01_00_01_00>(m[0], m[1]);
-        let m02_m03_m12_m13 = _mm_shuffle_ps::<0b_11_10_11_10>(m[0], m[1]);
-        let m20_m21_m30_m31 = _mm_shuffle_ps::<0b_01_00_01_00>(m[2], m[3]);
-        let m22_m23_m32_m33 = _mm_shuffle_ps::<0b_11_10_11_10>(m[2], m[3]);
-        let m00_m10_m01_m11 = _mm_shuffle_ps::<0b_11_01_10_00>(m00_m01_m10_m11, m00_m01_m10_m11);
-        let m02_m12_m03_m13 = _mm_shuffle_ps::<0b_11_01_10_00>(m02_m03_m12_m13, m02_m03_m12_m13);
-        let m20_m30_m21_m31 = _mm_shuffle_ps::<0b_11_01_10_00>(m20_m21_m30_m31, m20_m21_m30_m31);
-        let m22_m32_m23_m33 = _mm_shuffle_ps::<0b_11_01_10_00>(m22_m23_m32_m33, m22_m23_m32_m33);
-        let m00_m10_m20_m30 = _mm_shuffle_ps::<0b_01_00_01_00>(m00_m10_m01_m11, m20_m30_m21_m31);
-        let m01_m11_m21_m31 = _mm_shuffle_ps::<0b_11_10_11_10>(m00_m10_m01_m11, m20_m30_m21_m31);
-        let m02_m12_m22_m32 = _mm_shuffle_ps::<0b_01_00_01_00>(m02_m12_m03_m13, m22_m32_m23_m33);
-        let m03_m13_m23_m33 = _mm_shuffle_ps::<0b_11_10_11_10>(m02_m12_m03_m13, m22_m32_m23_m33);
-
-        let m10_m00_m30_m20 = _mm_shuffle_ps::<0b_10_11_00_01>(m00_m10_m20_m30, m00_m10_m20_m30);
-        let m11_m01_m31_m21 = _mm_shuffle_ps::<0b_10_11_00_01>(m01_m11_m21_m31, m01_m11_m21_m31);
-        let m12_m02_m32_m22 = _mm_shuffle_ps::<0b_10_11_00_01>(m02_m12_m22_m32, m02_m12_m22_m32);
-        let m13_m03_m33_m23 = _mm_shuffle_ps::<0b_10_11_00_01>(m03_m13_m23_m33, m03_m13_m23_m33);
-
-        let t12_t12_t11_t11 = _mm_shuffle_ps::<0b_01_01_10_10>(t1, t1);
-        let t13_t13_t10_t10 = _mm_shuffle_ps::<0b_00_00_11_11>(t1, t1);
-        let t20_t20_t03_t03 = _mm_shuffle_ps::<0b_11_11_00_00>(t2, t0);
-        let t21_t21_t02_t02 = _mm_shuffle_ps::<0b_10_10_01_01>(t2, t0);
-        let t22_t22_t01_t01 = _mm_shuffle_ps::<0b_01_01_10_10>(t2, t0);
-        let t23_t23_t00_t00 = _mm_shuffle_ps::<0b_00_00_11_11>(t2, t0);
-
-        let r0 = _mm_mul_ps(m11_m01_m31_m21, t12_t12_t11_t11);
-        let r0 = _mm_mul_ps(r0, one_neg_one_neg);
-
-        let r1 = _mm_mul_ps(m12_m02_m32_m22, t13_t13_t10_t10);
-        let r1 = _mm_mul_ps(r1, neg_one_neg_one);
-
-        let r2 = _mm_mul_ps(m13_m03_m33_m23, t20_t20_t03_t03);
-        let r2 = _mm_mul_ps(r2, one_neg_one_neg);
-
-        let col0 = _mm_add_ps(r0, r1);
-        let col0 = _mm_add_ps(col0, r2);
-        let col0 = _mm_div_ps(col0, det);
-
-        
-        let r0 = _mm_mul_ps(m10_m00_m30_m20, t12_t12_t11_t11);
-        let r0 = _mm_mul_ps(r0, neg_one_neg_one);
-
-        let r1 = _mm_mul_ps(m12_m02_m32_m22, t21_t21_t02_t02);
-        let r1 = _mm_mul_ps(r1, one_neg_one_neg);
-
-        let r2 = _mm_mul_ps(m13_m03_m33_m23, t22_t22_t01_t01);
-        let r2 = _mm_mul_ps(r2, neg_one_neg_one);
-
-        let col1 = _mm_add_ps(r0, r1);
-        let col1 = _mm_add_ps(col1, r2);
-        let col1 = _mm_div_ps(col1, det);
-
-
-        let r0 = _mm_mul_ps(m10_m00_m30_m20, t13_t13_t10_t10);
-        let r0 = _mm_mul_ps(r0, one_neg_one_neg);
-        
-        let r1 = _mm_mul_ps(m11_m01_m31_m21, t21_t21_t02_t02);
-        let r1 = _mm_mul_ps(r1, neg_one_neg_one);
-
-        let r2 = _mm_mul_ps(m13_m03_m33_m23, t23_t23_t00_t00);
-        let r2 = _mm_mul_ps(r2, one_neg_one_neg);
-
-        let col2 = _mm_add_ps(r0, r1);
-        let col2 = _mm_add_ps(col2, r2);
-        let col2 = _mm_div_ps(col2, det);
-
-
-        let r0 = _mm_mul_ps(m10_m00_m30_m20, t20_t20_t03_t03);
-        let r0 = _mm_mul_ps(r0, neg_one_neg_one);
-
-        let r1 = _mm_mul_ps(m11_m01_m31_m21, t22_t22_t01_t01);
-        let r1 = _mm_mul_ps(r1, one_neg_one_neg);
-
-        let r2 = _mm_mul_ps(m12_m02_m32_m22, t23_t23_t00_t00);
-        let r2 = _mm_mul_ps(r2, neg_one_neg_one);
-
-        let col3 = _mm_add_ps(r0, r1);
-        let col3 = _mm_add_ps(col3, r2);
-        let col3 = _mm_div_ps(col3, det);
-
-        Some([col0, col1, col2, col3])
+        let one_one_one_one = _mm_load_ps(&ONE_ONE_ONE_ONE as *const f32);
+        let recip_det = _mm_div_ps(one_one_one_one, det);
+        Some([
+            _mm_mul_ps(inverse[0], recip_det), 
+            _mm_mul_ps(inverse[1], recip_det), 
+            _mm_mul_ps(inverse[2], recip_det), 
+            _mm_mul_ps(inverse[3], recip_det) 
+        ])
     }
 }
