@@ -7,6 +7,8 @@ Just like [DirectXMath](https://github.com/microsoft/DirectXMath), data and vect
 The imm library supports SIMD instructions on the `x86`, `x86_64` and the `aarch64` architecture.
 
 ### Compile Features
+- `bytemuck` - Enables the bytemuck library implementation.
+- `mint` - Enables the mint library implementation.
 - `scalar-math` - Disable the simd instruction in the library.
 
 # License
