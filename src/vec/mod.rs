@@ -3,7 +3,7 @@
 //! 
 //! # Example
 //! ```
-//! use imm::prelude::*;
+//! use gmm::prelude::*;
 //! 
 //! let data = Float4::new(1.0, 2.0, 3.0, 4.0);
 //! let vec = load_float4(data);

@@ -1,11 +1,11 @@
-//! # Independent Management Matrix (IMM)
+//! # Game Math for Me
 //! A math library for video games that allow independent management of data.
 //! Just like [DirectXMath](https://github.com/microsoft/DirectXMath), data and vectors are divided.
 //! 
 //! 
 //! # Example
 //! ```
-//! use imm::prelude::*;
+//! use gmm::prelude::*;
 //! 
 //! let a = Float4::new(1.0, 2.0, 3.0, 4.0);
 //! let b = Float4::fill(5.0);
@@ -23,7 +23,7 @@
 //! 
 //! # Features
 //! ### Supports SIMD operations
-//! The imm library supports SIMD instructions on the `x86`, `x86_64` and the `aarch64` architecture.
+//! The gmm library supports SIMD instructions on the `x86`, `x86_64` and the `aarch64` architecture.
 //! 
 //! 
 //! ### Compile Features

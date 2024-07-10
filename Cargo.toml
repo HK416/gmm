@@ -1,11 +1,11 @@
 [package]
-name = "imm"
+name = "gmm"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.76"
 authors = ["HK416 <powerspirit127@gmail.com>"]
 description = "Math library for video games"
-repository = "https://github.com/HK416/imm"
+repository = "https://github.com/HK416/gmm"
 readme = "README.md"
 license = "MIT"
 keywords = ["gamedev", "math", "vector", "matrix", "simd"]
