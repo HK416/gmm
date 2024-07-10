@@ -27,6 +27,8 @@
 //! 
 //! 
 //! ### Compile Features
+//! - `bytemuck` - Enables the bytemuck library implementation.
+//! - `mint` - Enables the mint library implementation.
 //! - `scalar-math` - Disable the simd instruction in the library.
 //! 
 //! 

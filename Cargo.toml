@@ -8,13 +8,18 @@ description = "Math library for video games"
 readme = "README.md"
 license = "LICENSE"
 
+
+
 [dev-dependencies]
 rand = "0.8.*"
 glam = "0.28.*" # Used to evaluate whether it is functioning properly.
 
+
+
 [dependencies]
 bytemuck = { version = "1.16", optional = true, default-features = false }
 mint = { version = "0.5", optional = true, default-features = false }
+
 
 
 [features]

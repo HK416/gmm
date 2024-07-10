@@ -1,3 +1,24 @@
+//! # Vector types
+//! Perform operations such as addition or subtraction.
+//! 
+//! # Example
+//! ```
+//! use imm::prelude::*;
+//! 
+//! let data = Float4::new(1.0, 2.0, 3.0, 4.0);
+//! let vec = load_float4(data);
+//! 
+//! /* ...vector operation... */
+//! 
+//! let data = store_float4(vec);
+//! 
+//! ```
+//! 
+//! ### Supports SIMD operations
+//! - `aarch64` - Supports SIMD operations using `neon`.
+//! - `x86`, `x86_64` - Supports SIMD operations using `sse2`.
+//! 
+
 #[cfg(all(target_feature = "neon", not(feature = "scalar-math")))] 
 mod neon;
 

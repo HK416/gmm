@@ -1,3 +1,7 @@
+//! # Data types
+//! It does not perform operations such as addition or subtraction.
+//! 
+
 mod features;
 
 pub mod bool2;
