@@ -5,8 +5,10 @@ edition = "2021"
 rust-version = "1.76"
 authors = ["HK416 <powerspirit127@gmail.com>"]
 description = "Math library for video games"
+repository = "https://github.com/HK416/imm"
 readme = "README.md"
-license = "LICENSE"
+license = "MIT"
+keywords = ["gamedev", "math", "vector", "matrix", "simd"]
 
 
 
