@@ -1,3 +1,5 @@
+mod features;
+
 pub mod bool2;
 pub use self::bool2::*;
 

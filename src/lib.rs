@@ -34,7 +34,9 @@
 //! MIT license (LICENSE or http://opensource.org/licenses/MIT)
 //! 
 
+pub mod prelude;
+
 pub mod data;
 pub mod vec;
-pub mod prelude;
+
 pub mod utils;
