@@ -1,8 +1,9 @@
-use core::fmt;
-use core::ops;
-
+use crate::macros::impl_element2;
+use crate::macros::impl_element2_op;
 use super::int3::Integer3;
 use super::int4::Integer4;
+
+
 
 /// A structure that stores two-dimensional integer data.
 #[repr(C)]
@@ -39,32 +40,6 @@ impl Integer2 {
 
     /// All elements are [`i32::MAX`].
     pub const MAX: Self = Self::fill(i32::MAX);
-
-    /// Creates with given elements.
-    #[must_use]
-    #[inline(always)]
-    pub const fn new(x: i32, y: i32) -> Self {
-        Self { x, y }
-    }
-
-    /// Fills all elements with the given values.
-    #[must_use]
-    #[inline(always)]
-    pub const fn fill(val: i32) -> Self {
-        Self { x: val, y: val }
-    }
-
-    /// Creates with given array.
-    /// 
-    /// # Panics
-    /// If the length of the given array is less than the number of elements in the vector,
-    /// an index out of range error occurs.
-    /// 
-    #[must_use]
-    #[inline(always)]
-    pub fn from_array(arr: &[i32]) -> Self {
-        Self { x: arr[0], y: arr[1] }
-    }
 }
 
 // Vector swizzle code implementation.
@@ -217,6 +192,10 @@ impl Default for Integer2 {
     }
 }
 
+impl_element2!(i32, Integer2);
+
+impl_element2_op!(i32, Integer2);
+
 impl From<Integer3> for Integer2 {
     #[inline]
     fn from(value: Integer3) -> Self {
@@ -231,54 +210,13 @@ impl From<Integer4> for Integer2 {
     }
 }
 
-impl AsRef<[i32; 2]> for Integer2 {
+impl core::ops::Neg for Integer2 {
+    type Output = Self;
     #[inline]
-    fn as_ref(&self) -> &[i32; 2] {
-        unsafe { &*(self as *const Integer2 as *const [i32; 2]) }
-    }
-}
-
-impl AsMut<[i32; 2]> for Integer2 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut [i32; 2] {
-        unsafe { &mut *(self as *mut Integer2 as *mut [i32; 2]) }
-    }
-}
-
-impl ops::Index<usize> for Integer2 {
-    type Output = i32;
-    #[inline]
-    fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            _ => panic!("index out of range!"),
+    fn neg(self) -> Self::Output {
+        Self::Output {
+            x: -self.x, 
+            y: -self.y, 
         }
-    }
-}
-
-impl ops::IndexMut<usize> for Integer2 {
-    #[inline]
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        match index {
-            0 => &mut self.x,
-            1 => &mut self.y,
-            _ => panic!("index out of range!"),
-        }
-    }
-}
-
-impl fmt::Debug for Integer2 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple(stringify!(Integer2))
-            .field(&self.x)
-            .field(&self.y)
-            .finish()
-    }
-}
-
-impl fmt::Display for Integer2 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{{ {}, {} }}", &self.x, &self.y)
     }
 }

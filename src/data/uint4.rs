@@ -1,9 +1,10 @@
-use core::fmt;
-use core::ops;
-
+use crate::macros::impl_element4;
+use crate::macros::impl_element4_op;
 use super::bool4::Boolean4;
 use super::uint2::UInteger2;
 use super::uint3::UInteger3;
+
+
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -38,32 +39,6 @@ impl UInteger4 {
 
     /// All elements are [`u32::MAX`].
     pub const MAX: Self = Self::fill(u32::MAX);
-
-    /// Creates with given elements.
-    #[must_use]
-    #[inline(always)]
-    pub const fn new(x: u32, y: u32, z: u32, w: u32) -> Self {
-        Self { x, y, z, w }
-    }
-
-    /// Fills all elements with the given values.
-    #[must_use]
-    #[inline(always)]
-    pub const fn fill(val: u32) -> Self {
-        Self { x: val, y: val, z: val, w: val }
-    }
-
-    /// Creates with given array.
-    /// 
-    /// # Panics
-    /// If the length of the given array is less than the number of elements in the vector,
-    /// an index out of range error occurs.
-    /// 
-    #[must_use]
-    #[inline(always)]
-    pub fn from_array(arr: &[u32]) -> Self {
-        Self { x: arr[0], y: arr[1], z: arr[2], w: arr[3] }
-    }
 }
 
 // Vector swizzle code implementation.
@@ -1750,6 +1725,10 @@ impl UInteger4 {
     }
 }
 
+impl_element4!(u32, UInteger4);
+
+impl_element4_op!(u32, UInteger4);
+
 impl Default for UInteger4 {
     #[inline(always)]
     fn default() -> Self {
@@ -1792,63 +1771,5 @@ impl From<UInteger3> for UInteger4 {
     #[inline]
     fn from(value: UInteger3) -> Self {
         UInteger4 { x: value.x, y: value.y, z: value.z, w: 0 }
-    }
-}
-
-impl AsRef<[u32; 4]> for UInteger4 {
-    #[inline]
-    fn as_ref(&self) -> &[u32; 4] {
-        unsafe { &*(self as *const UInteger4 as *const [u32; 4]) }
-    }
-}
-
-impl AsMut<[u32; 4]> for UInteger4 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut [u32; 4] {
-        unsafe { &mut *(self as *mut UInteger4 as *mut [u32; 4]) }
-    }
-}
-
-impl ops::Index<usize> for UInteger4 {
-    type Output = u32;
-    #[inline]
-    fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            2 => &self.z,
-            3 => &self.w,
-            _ => panic!("index out of range!"),
-        }
-    }
-}
-
-impl ops::IndexMut<usize> for UInteger4 {
-    #[inline]
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        match index {
-            0 => &mut self.x,
-            1 => &mut self.y,
-            2 => &mut self.z,
-            3 => &mut self.w,
-            _ => panic!("index out of range!"),
-        }
-    }
-}
-
-impl fmt::Debug for UInteger4 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple(stringify!(UInteger4))
-            .field(&self.x)
-            .field(&self.y)
-            .field(&self.z)
-            .field(&self.w)
-            .finish()
-    }
-}
-
-impl fmt::Display for UInteger4 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{{ {}, {}, {}, {} }}", &self.x, &self.y, &self.z, &self.w)
     }
 }

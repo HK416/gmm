@@ -1,6 +1,6 @@
 [package]
 name = "gmm"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.76"
 authors = ["HK416 <powerspirit127@gmail.com>"]

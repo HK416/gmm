@@ -1,10 +1,10 @@
-use core::fmt;
-use core::ops;
-use core::f32;
-
+use crate::macros::impl_element4;
+use crate::macros::impl_element4_op;
 use super::bool4::Boolean4;
 use super::float2::Float2;
 use super::float3::Float3;
+
+
 
 /// A structure that stores four-dimensional vector data.
 #[repr(C)]
@@ -64,32 +64,6 @@ impl Float4 {
 
     /// All elements are [`f32::NEG_INFINITY`].
     pub const NEG_INFINITY: Self = Self::fill(f32::NEG_INFINITY);
-
-    /// Creates with given elements.
-    #[must_use]
-    #[inline(always)]
-    pub const fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
-        Self { x, y, z, w }
-    }
-
-    /// Fills all elements with the given values.
-    #[must_use]
-    #[inline(always)]
-    pub const fn fill(val: f32) -> Self {
-        Self { x: val, y: val, z: val, w: val }
-    }
-
-    /// Creates with given array.
-    /// 
-    /// # Panics
-    /// If the length of the given array is less than the number of elements in the vector,
-    /// an index out of range error occurs.
-    /// 
-    #[must_use]
-    #[inline(always)]
-    pub fn from_array(arr: &[f32]) -> Self {
-        Self { x: arr[0], y: arr[1], z: arr[2], w: arr[3] }
-    }
 
     /// Returns `true` if at least one element of the vector is [`f32::NAN`].
     #[inline]
@@ -1798,6 +1772,10 @@ impl Float4 {
     }
 }
 
+impl_element4!(f32, Float4);
+
+impl_element4_op!(f32, Float4);
+
 impl Default for Float4 {
     #[inline(always)]
     fn default() -> Self {
@@ -1819,59 +1797,15 @@ impl From<Float3> for Float4 {
     }
 }
 
-impl AsRef<[f32; 4]> for Float4 {
+impl core::ops::Neg for Float4{
+    type Output = Self;
     #[inline]
-    fn as_ref(&self) -> &[f32; 4] {
-        unsafe { &*(self as *const Float4 as *const [f32; 4]) }
-    }
-}
-
-impl AsMut<[f32; 4]> for Float4 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut [f32; 4] {
-        unsafe { &mut *(self as *mut Float4 as *mut [f32; 4]) }
-    }
-}
-
-impl ops::Index<usize> for Float4 {
-    type Output = f32;
-    #[inline]
-    fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            2 => &self.z,
-            3 => &self.w,
-            _ => panic!("index out of range!"),
+    fn neg(self) -> Self::Output {
+        Self::Output {
+            x: -self.x, 
+            y: -self.y, 
+            z: -self.z, 
+            w: -self.w, 
         }
-    }
-}
-
-impl ops::IndexMut<usize> for Float4 {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        match index {
-            0 => &mut self.x,
-            1 => &mut self.y,
-            2 => &mut self.z,
-            3 => &mut self.w,
-            _ => panic!("index out of range!")
-        }
-    }
-}
-
-impl fmt::Debug for Float4 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple(stringify!(Float4))
-            .field(&self.x)
-            .field(&self.y)
-            .field(&self.z)
-            .field(&self.w)
-            .finish()
-    }
-}
-
-impl fmt::Display for Float4 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{{ {}, {}, {}, {} }}", &self.x, &self.y, &self.z, &self.w)
     }
 }

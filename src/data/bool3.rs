@@ -1,8 +1,9 @@
-use core::fmt;
 use core::ops;
-
+use crate::macros::impl_element3;
 use super::bool2::Boolean2;
 use super::bool4::Boolean4;
+
+
 
 /// A structure that stores three-dimensional boolean data.
 #[repr(C)]
@@ -19,32 +20,6 @@ impl Boolean3 {
 
     /// All elements are `false`.
     pub const FALSE: Self = Self::fill(false);
-
-    /// Creates with given elements.
-    #[must_use]
-    #[inline(always)]
-    pub const fn new(x: bool, y: bool, z: bool) -> Self {
-        Self { x, y, z }
-    }
-
-    /// Fills all elements with the given values.
-    #[must_use]
-    #[inline(always)]
-    pub const fn fill(val: bool) -> Self {
-        Self { x: val, y: val, z: val }
-    }
-
-    /// Creates with given array.
-    /// 
-    /// # Panics
-    /// If the length of the given array is less than the number of elements in the vector,
-    /// an index out of range error occurs.
-    /// 
-    #[must_use]
-    #[inline(always)]
-    pub fn from_array(arr: &[bool]) -> Self {
-        Self { x: arr[0], y: arr[1], z: arr[2] }
-    }
 
     /// Returns `true` if any of the elements are `true`.
     #[inline]
@@ -642,8 +617,10 @@ impl Boolean3 {
     }
 }
 
+impl_element3!(bool, Boolean3);
+
 impl Default for Boolean3 {
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self::FALSE
     }
@@ -663,57 +640,71 @@ impl From<Boolean4> for Boolean3 {
     }
 }
 
-impl AsRef<[bool; 3]> for Boolean3 {
+impl ops::BitAnd<Self> for Boolean3 {
+    type Output = Self;
     #[inline]
-    fn as_ref(&self) -> &[bool; 3] {
-        unsafe { &*(self as *const Boolean3 as *const [bool; 3]) }
-    }
-}
-
-impl AsMut<[bool; 3]> for Boolean3 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut [bool; 3] {
-        unsafe { &mut *(self as *mut Boolean3 as *mut [bool; 3]) }
-    }
-}
-
-impl ops::Index<usize> for Boolean3 {
-    type Output = bool;
-    #[inline]
-    fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            2 => &self.z,
-            _ => panic!("index out of range!"),
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Boolean3 {
+            x: self.x & rhs.x, 
+            y: self.y & rhs.y, 
+            z: self.z & rhs.z, 
         }
     }
 }
 
-impl ops::IndexMut<usize> for Boolean3 {
+impl ops::BitAndAssign for Boolean3 {
     #[inline]
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        match index {
-            0 => &mut self.x,
-            1 => &mut self.y,
-            2 => &mut self.z,
-            _ => panic!("index out of range!"),
+    fn bitand_assign(&mut self, rhs: Self) {
+        *self = *self & rhs
+    }
+}
+
+impl ops::BitOr<Self> for Boolean3 {
+    type Output = Self;
+    #[inline]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Boolean3 {
+            x: self.x | rhs.x, 
+            y: self.y | rhs.y, 
+            z: self.z | rhs.z, 
         }
     }
 }
 
-impl fmt::Debug for Boolean3 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple(stringify!(Boolean3))
-            .field(&self.x)
-            .field(&self.y)
-            .field(&self.z)
-            .finish()
+impl ops::BitOrAssign for Boolean3 {
+    #[inline]
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = *self | rhs
     }
 }
 
-impl fmt::Display for Boolean3 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{{ {}, {}, {} }}", &self.x, &self.y, &self.z)
+impl ops::BitXor<Self> for Boolean3 {
+    type Output = Self;
+    #[inline]
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Boolean3 {
+            x: self.x ^ rhs.x, 
+            y: self.y ^ rhs.y, 
+            z: self.z ^ rhs.z, 
+        }
+    }
+}
+
+impl ops::BitXorAssign for Boolean3 {
+    #[inline]
+    fn bitxor_assign(&mut self, rhs: Self) {
+        *self = *self ^ rhs
+    }
+}
+
+impl ops::Not for Boolean3 {
+    type Output = Self;
+    #[inline]
+    fn not(self) -> Self::Output {
+        Boolean3 {
+            x: !self.x, 
+            y: !self.y, 
+            z: !self.z, 
+        }
     }
 }

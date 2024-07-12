@@ -1,8 +1,9 @@
-use core::fmt;
 use core::ops;
-
+use crate::macros::impl_element2;
 use super::bool3::Boolean3;
 use super::bool4::Boolean4;
+
+
 
 /// A structure that stores two-dimensional boolean data.
 #[repr(C)]
@@ -18,32 +19,6 @@ impl Boolean2 {
 
     /// All elements are `false`.
     pub const FALSE: Self = Self::fill(false);
-
-    /// Creates with given elements.
-    #[must_use]
-    #[inline(always)]
-    pub const fn new(x: bool, y: bool) -> Self {
-        Self { x, y }
-    }
-
-    /// Fills all elements with the given values.
-    #[must_use]
-    #[inline(always)]
-    pub const fn fill(val: bool) -> Self {
-        Self { x: val, y: val }
-    }
-
-    /// Creates with given array.
-    /// 
-    /// # Panics
-    /// If the length of the given array is less than the number of elements in the vector,
-    /// an index out of range error occurs.
-    /// 
-    #[must_use]
-    #[inline(always)]
-    pub fn from_array(arr: &[bool]) -> Self {
-        Self { x: arr[0], y: arr[1] }
-    }
 
     /// Returns `true` if any of the elements are `true`.
     #[inline]
@@ -201,8 +176,10 @@ impl Boolean2 {
     }
 }
 
+impl_element2!(bool, Boolean2);
+
 impl Default for Boolean2 {
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self::FALSE
     }
@@ -222,54 +199,67 @@ impl From<Boolean4> for Boolean2 {
     }
 }
 
-impl AsRef<[bool; 2]> for Boolean2 {
+impl ops::BitAnd<Self> for Boolean2 {
+    type Output = Boolean2;
     #[inline]
-    fn as_ref(&self) -> &[bool; 2] {
-        unsafe { &*(self as *const Boolean2 as *const [bool; 2]) }
-    }
-}
-
-impl AsMut<[bool; 2]> for Boolean2 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut [bool; 2] {
-        unsafe { &mut *(self as *mut Boolean2 as *mut [bool; 2]) }
-    }
-}
-
-impl ops::Index<usize> for Boolean2 {
-    type Output = bool;
-    #[inline]
-    fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            _ => panic!("index out of range!"),
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Boolean2 {
+            x: self.x & rhs.x, 
+            y: self.y & rhs.y, 
         }
     }
 }
 
-impl ops::IndexMut<usize> for Boolean2 {
+impl ops::BitAndAssign for Boolean2 {
     #[inline]
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        match index {
-            0 => &mut self.x,
-            1 => &mut self.y,
-            _ => panic!("index out of range!"),
+    fn bitand_assign(&mut self, rhs: Self) {
+        *self = *self & rhs
+    }
+}
+
+impl ops::BitOr<Self> for Boolean2 {
+    type Output = Boolean2;
+    #[inline]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Boolean2 {
+            x: self.x | rhs.x, 
+            y: self.y | rhs.y, 
         }
     }
 }
 
-impl fmt::Debug for Boolean2 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple(stringify!(Boolean2))
-            .field(&self.x)
-            .field(&self.y)
-            .finish()
+impl ops::BitOrAssign for Boolean2 {
+    #[inline]
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = *self | rhs
     }
 }
 
-impl fmt::Display for Boolean2 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{{ {}, {} }}", &self.x, &self.y)
+impl ops::BitXor<Self> for Boolean2 {
+    type Output = Boolean2;
+    #[inline]
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Boolean2 {
+            x: self.x ^ rhs.x, 
+            y: self.y ^ rhs.y, 
+        }
+    }
+}
+
+impl ops::BitXorAssign for Boolean2 {
+    #[inline]
+    fn bitxor_assign(&mut self, rhs: Self) {
+        *self = *self ^ rhs
+    }
+}
+
+impl ops::Not for Boolean2 {
+    type Output = Self;
+    #[inline]
+    fn not(self) -> Self::Output {
+        Boolean2 {
+            x: !self.x, 
+            y: !self.y
+        }
     }
 }

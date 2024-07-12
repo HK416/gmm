@@ -1,6 +1,9 @@
 //! This is a utility function module.
 //! 
-use super::prelude::*;
+use crate::vec::*;
+use crate::{
+    Float3, Float4, Float4x4, 
+};
 
 
 
@@ -304,7 +307,8 @@ pub fn matrix_orthographic_rh(left: f32, right: f32, bottom: f32, top: f32, near
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::utils::*;
+    use crate::{Float3, Float4};
     use rand::{self, Rng};
 
     /// Some SIMD instructions do not conform to IEEE-754. (for performance benefits)
@@ -321,7 +325,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         for test in 0..NUM_TEST {
             let arr: [f32; 4] = rng.gen();
-            let quat = Float4::from_array(&arr);
+            let quat = Float4::from_array(arr);
             let matrix = quaternion_to_matrix(quat);
 
             let g_quat = glam::Quat::from_array(arr).normalize();
@@ -349,8 +353,8 @@ mod tests {
             let pos_data: [f32; 3] = rng.gen();
             let rot_data: [f32; 4] = rng.gen();
             
-            let pos = Float3::from_array(&pos_data);
-            let quat = Float4::from_array(&rot_data);
+            let pos = Float3::from_array(pos_data);
+            let quat = Float4::from_array(rot_data);
             let axis = quaternion_to_axes(quat);
 
             let g_pos = glam::Vec3::from_array(pos_data);
@@ -382,8 +386,8 @@ mod tests {
             let pos_data: [f32; 3] = rng.gen();
             let rot_data: [f32; 4] = rng.gen();
             
-            let pos = Float3::from_array(&pos_data);
-            let quat = Float4::from_array(&rot_data);
+            let pos = Float3::from_array(pos_data);
+            let quat = Float4::from_array(rot_data);
             let axis = quaternion_to_axes(quat);
 
             let g_pos = glam::Vec3::from_array(pos_data);
@@ -419,8 +423,8 @@ mod tests {
                 *at = rng.gen_range(-10.0f32..10.0f32);
             }
 
-            let eye = Float3::from_array(&pos_data);
-            let at = Float3::from_array(&at_data);
+            let eye = Float3::from_slice(&pos_data);
+            let at = Float3::from_slice(&at_data);
             let matrix = matrix_look_at_lh(eye, at, Float3::Y);
 
             let g_eye = glam::Vec3::from_slice(&pos_data);
@@ -453,8 +457,8 @@ mod tests {
                 *at = rng.gen_range(-10.0f32..10.0f32);
             }
 
-            let eye = Float3::from_array(&pos_data);
-            let at = Float3::from_array(&at_data);
+            let eye = Float3::from_slice(&pos_data);
+            let at = Float3::from_slice(&at_data);
             let matrix = matrix_look_at_rh(eye, at, Float3::Y);
 
             let g_eye = glam::Vec3::from_slice(&pos_data);

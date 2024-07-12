@@ -5,6 +5,8 @@ use super::bool3::Boolean3;
 use super::float3::Float3;
 use super::float4x4::Float4x4;
 
+
+
 /// A structure that stores 3x3 column major matrix data.
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq)]
@@ -22,25 +24,47 @@ impl Float3x3 {
     pub const IDENTITY: Self = Self::from_columns(Float3::X, Float3::Y, Float3::Z);
 
     /// Creates a 3x3 matrix with given column vectors.
+    #[inline]
     #[must_use]
-    #[inline(always)]
     pub const fn from_columns(x_axis: Float3, y_axis: Float3, z_axis: Float3) -> Self {
         Self { x_axis, y_axis, z_axis }
     }
 
     /// Creates with given array.
+    #[inline]
+    #[must_use]
+    pub fn from_column_array(arr: [f32; 9]) -> Self {
+        Self { 
+            x_axis: Float3::from_slice(&arr[0..3]), 
+            y_axis: Float3::from_slice(&arr[3..6]), 
+            z_axis: Float3::from_slice(&arr[6..9]) 
+        }
+    }
+
+    /// Creates with given slice.
     /// 
     /// # Panics
     /// If the length of the given array is less than the number of elements in the matrix,
     /// an index out of range error occurs.
     /// 
+    #[inline]
     #[must_use]
-    #[inline(always)]
-    pub fn from_column_array(arr: &[f32]) -> Self {
+    pub fn from_column_slice(slice: &[f32]) -> Self {
         Self { 
-            x_axis: Float3::from_array(&arr[0..3]), 
-            y_axis: Float3::from_array(&arr[3..6]), 
-            z_axis: Float3::from_array(&arr[6..9]) 
+            x_axis: Float3::from_slice(&slice[0..3]), 
+            y_axis: Float3::from_slice(&slice[3..6]), 
+            z_axis: Float3::from_slice(&slice[6..9]), 
+        }
+    }
+
+    /// Creates with given tuple.
+    #[inline]
+    #[must_use]
+    pub fn from_column_tuple(tuple: (Float3, Float3, Float3)) -> Self {
+        Self { 
+            x_axis: tuple.0, 
+            y_axis: tuple.1, 
+            z_axis: tuple.2 
         }
     }
 

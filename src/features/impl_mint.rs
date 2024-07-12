@@ -1,9 +1,8 @@
-use crate::data::{
+use crate::{
     Boolean2, Boolean3, Boolean4, 
-    Float2, Float3, Float4, Float3x3, Float4x4, 
+    Float2, Float3, Float3x3, Float4, Float4x4, 
     Integer2, Integer3, Integer4, UInteger2, UInteger3, UInteger4, 
 };
-
 
 
 macro_rules! impl_vector2_type {

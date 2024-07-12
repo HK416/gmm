@@ -1,5 +1,5 @@
 #[cfg(features = "bytemuck")]
-pub mod bytemuck;
+pub mod impl_bytemuck;
 
 #[cfg(features = "mint")]
-pub mod mint;
+pub mod impl_mint;

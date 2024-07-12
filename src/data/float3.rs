@@ -1,10 +1,10 @@
-use core::fmt;
-use core::ops;
-use core::f32;
-
+use crate::macros::impl_element3;
+use crate::macros::impl_element3_op;
 use super::bool3::Boolean3;
 use super::float2::Float2;
 use super::float4::Float4;
+
+
 
 /// A structure that stores three-dimensional vector data.
 #[repr(C)]
@@ -57,32 +57,6 @@ impl Float3 {
 
     /// All elements are [`f32::NEG_INFINITY`].
     pub const NEG_INFINITY: Self = Self::fill(f32::NEG_INFINITY);
-
-    /// Creates with given elements.
-    #[must_use]
-    #[inline(always)]
-    pub const fn new(x: f32, y: f32, z: f32) -> Self {
-        Self { x, y, z }
-    }
-
-    /// Fills all elements with the given values.
-    #[must_use]
-    #[inline(always)]
-    pub const fn fill(val: f32) -> Self {
-        Self { x: val, y: val, z: val }
-    }
-
-    /// Creates with given array.
-    /// 
-    /// # Panics
-    /// If the length of the given array is less than the number o elements in the vector,
-    /// an index out of range error occurs.
-    /// 
-    #[must_use]
-    #[inline(always)]
-    pub fn from_array(arr: &[f32]) -> Self {
-        Self { x: arr[0], y: arr[1], z: arr[2] }
-    }
 
     /// Returns `true` if at least one element of the vector is [`f32::NAN`].
     #[inline]
@@ -688,6 +662,10 @@ impl Float3 {
     }
 }
 
+impl_element3!(f32, Float3);
+
+impl_element3_op!(f32, Float3);
+
 impl Default for Float3 {
     #[inline(always)]
     fn default() -> Self {
@@ -709,56 +687,14 @@ impl From<Float4> for Float3 {
     }
 }
 
-impl AsRef<[f32; 3]> for Float3 {
+impl core::ops::Neg for Float3 {
+    type Output = Self;
     #[inline]
-    fn as_ref(&self) -> &[f32; 3] {
-        unsafe { &*(self as *const Float3 as *const [f32; 3]) }
-    }
-}
-
-impl AsMut<[f32; 3]> for Float3 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut [f32; 3] {
-        unsafe { &mut *(self as *mut Float3 as *mut [f32; 3]) }
-    }
-}
-
-impl ops::Index<usize> for Float3 {
-    type Output = f32;
-    #[inline]
-    fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            2 => &self.z,
-            _ => panic!("index out of range!"),
+    fn neg(self) -> Self::Output {
+        Self::Output {
+            x: -self.x, 
+            y: -self.y, 
+            z: -self.z, 
         }
-    }
-}
-
-impl ops::IndexMut<usize> for Float3 {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        match index {
-            0 => &mut self.x,
-            1 => &mut self.y,
-            2 => &mut self.z,
-            _ => panic!("index out of range!")
-        }
-    }
-}
-
-impl fmt::Debug for Float3 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple(stringify!(Float3))
-            .field(&self.x)
-            .field(&self.y)
-            .field(&self.z)
-            .finish()
-    }
-}
-
-impl fmt::Display for Float3 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{{ {}, {}, {} }}", &self.x, &self.y, &self.z)
     }
 }

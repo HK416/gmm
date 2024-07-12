@@ -5,6 +5,8 @@ use super::bool4::Boolean4;
 use super::float3x3::Float3x3;
 use super::float4::Float4;
 
+
+
 /// A structure that stores 4x4 column major matrix data.
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq)]
@@ -23,10 +25,22 @@ impl Float4x4 {
     pub const IDENTITY: Self = Self::from_columns(Float4::X, Float4::Y, Float4::Z, Float4::W);
 
     /// Creates a 4x4 matrix with given column vectors.
+    #[inline]
     #[must_use]
-    #[inline(always)]
     pub const fn from_columns(x_axis: Float4, y_axis: Float4, z_axis: Float4, w_axis: Float4) -> Self {
         Self { x_axis, y_axis, z_axis, w_axis }
+    }
+
+    /// Creates with given array.
+    #[inline]
+    #[must_use]
+    pub fn from_column_array(arr: [f32; 16]) -> Self {
+        Self { 
+            x_axis: Float4::from_slice(&arr[0..4]), 
+            y_axis: Float4::from_slice(&arr[4..8]), 
+            z_axis: Float4::from_slice(&arr[8..12]), 
+            w_axis: Float4::from_slice(&arr[12..16]) 
+        }
     }
 
     /// Creates with given array.
@@ -35,14 +49,26 @@ impl Float4x4 {
     /// If the length of the given array is less than the number of elements in the matrix,
     /// an index out of range error occurs.
     /// 
+    #[inline]
     #[must_use]
-    #[inline(always)]
-    pub fn from_column_array(arr: &[f32]) -> Self {
+    pub fn from_column_slice(slice: &[f32]) -> Self {
         Self { 
-            x_axis: Float4::from_array(&arr[0..4]), 
-            y_axis: Float4::from_array(&arr[4..8]), 
-            z_axis: Float4::from_array(&arr[8..12]), 
-            w_axis: Float4::from_array(&arr[12..16]) 
+            x_axis: Float4::from_slice(&slice[0..4]), 
+            y_axis: Float4::from_slice(&slice[4..8]), 
+            z_axis: Float4::from_slice(&slice[8..12]), 
+            w_axis: Float4::from_slice(&slice[12..16]) 
+        }
+    }
+
+    /// Creates with given tuple.
+    #[inline]
+    #[must_use]
+    pub fn from_column_tuple(tuple: (Float4, Float4, Float4, Float4)) -> Self {
+        Self { 
+            x_axis: tuple.0, 
+            y_axis: tuple.1, 
+            z_axis: tuple.2, 
+            w_axis: tuple.3 
         }
     }
 

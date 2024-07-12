@@ -1,7 +1,7 @@
 use core::f32;
 use rand::Rng;
-
-use crate::prelude::*;
+use crate::vec::*;
+use crate::{Float2, Float3, Float4, Float4x4, UInteger4};
 
 /// Some SIMD instructions do not conform to IEEE-754. (for performance benefits)
 /// 
@@ -51,7 +51,7 @@ fn matrix_load_store_test() {
         99.87223603758153
     ];
 
-    let a = Float4x4::from_column_array(&ELEMENTS);
+    let a = Float4x4::from_column_array(ELEMENTS);
     let m = load_float4x4(a);
     let b = store_float4x4(m);
 
@@ -89,8 +89,8 @@ fn vector_add_test() {
         let b_arr: [f32; 4] = rng.gen();
 
         
-        let a = Float4::from_array(&a_arr);
-        let b = Float4::from_array(&b_arr);
+        let a = Float4::from_array(a_arr);
+        let b = Float4::from_array(b_arr);
         let v_a = load_float4(a);
         let v_b = load_float4(b);
         let v_res = vector_add(v_a, v_b);
@@ -117,8 +117,8 @@ fn vector_sub_test() {
         let b_arr: [f32; 4] = rng.gen();
 
         
-        let a = Float4::from_array(&a_arr);
-        let b = Float4::from_array(&b_arr);
+        let a = Float4::from_array(a_arr);
+        let b = Float4::from_array(b_arr);
         let v_a = load_float4(a);
         let v_b = load_float4(b);
         let v_res = vector_sub(v_a, v_b);
@@ -145,8 +145,8 @@ fn vector_mul_test() {
         let b_arr: [f32; 4] = rng.gen();
 
         
-        let a = Float4::from_array(&a_arr);
-        let b = Float4::from_array(&b_arr);
+        let a = Float4::from_array(a_arr);
+        let b = Float4::from_array(b_arr);
         let v_a = load_float4(a);
         let v_b = load_float4(b);
         let v_res = vector_mul(v_a, v_b);
@@ -173,7 +173,7 @@ fn vector_div_test() {
         let b_val: f32 = rng.gen_range(0.001..f32::MAX);
 
         
-        let a = Float4::from_array(&a_arr);
+        let a = Float4::from_array(a_arr);
         let b = Float4::fill(b_val);
         let v_a = load_float4(a);
         let v_b = load_float4(b);
@@ -199,7 +199,7 @@ fn vector_neg_test() {
     for test in 0..NUM_TEST {
         let arr: [f32; 4] = rng.gen();
 
-        let a = Float4::from_array(&arr);
+        let a = Float4::from_array(arr);
         let v_a = load_float4(a);
         let v_res = vector_neg(v_a);
         let res = store_float4(v_res);
@@ -223,8 +223,8 @@ fn vector_min_test() {
         let a_arr: [f32; 4] = rng.gen();
         let b_arr: [f32; 4] = rng.gen();
         
-        let a = Float4::from_array(&a_arr);
-        let b = Float4::from_array(&b_arr);
+        let a = Float4::from_array(a_arr);
+        let b = Float4::from_array(b_arr);
         let v_a = load_float4(a);
         let v_b = load_float4(b);
         let v_res = vector_min(v_a, v_b);
@@ -250,8 +250,8 @@ fn vector_max_test() {
         let a_arr: [f32; 4] = rng.gen();
         let b_arr: [f32; 4] = rng.gen();
 
-        let a = Float4::from_array(&a_arr);
-        let b = Float4::from_array(&b_arr);
+        let a = Float4::from_array(a_arr);
+        let b = Float4::from_array(b_arr);
         let v_a = load_float4(a);
         let v_b = load_float4(b);
         let v_res = vector_max(v_a, v_b);
@@ -277,8 +277,8 @@ fn vector_transform_test() {
         let matrix: [f32; 16] = rng.gen();
         let vector: [f32; 4] = rng.gen();
 
-        let m = Float4x4::from_column_array(&matrix);
-        let v = Float4::from_array(&vector);
+        let m = Float4x4::from_column_array(matrix);
+        let v = Float4::from_array(vector);
         let m = load_float4x4(m);
         let v = load_float4(v);
         let res = vector_transform(m, v);
@@ -304,8 +304,8 @@ fn vector2_dot_test() {
         let a_arr: [f32; 2] = rng.gen();
         let b_arr: [f32; 2] = rng.gen();
         
-        let a = Float2::from_array(&a_arr);
-        let b = Float2::from_array(&b_arr);
+        let a = Float2::from_array(a_arr);
+        let b = Float2::from_array(b_arr);
         let v_a = load_float2(a);
         let v_b = load_float2(b);
         let res = vector2_dot(v_a, v_b);
@@ -326,8 +326,8 @@ fn vector3_dot_test() {
         let a_arr: [f32; 3] = rng.gen();
         let b_arr: [f32; 3] = rng.gen();
         
-        let a = Float3::from_array(&a_arr);
-        let b = Float3::from_array(&b_arr);
+        let a = Float3::from_array(a_arr);
+        let b = Float3::from_array(b_arr);
         let v_a = load_float3(a);
         let v_b = load_float3(b);
         let res = vector3_dot(v_a, v_b);
@@ -348,8 +348,8 @@ fn vector4_dot_test() {
         let a_arr: [f32; 4] = rng.gen();
         let b_arr: [f32; 4] = rng.gen();
         
-        let a = Float4::from_array(&a_arr);
-        let b = Float4::from_array(&b_arr);
+        let a = Float4::from_array(a_arr);
+        let b = Float4::from_array(b_arr);
         let v_a = load_float4(a);
         let v_b = load_float4(b);
         let res = vector4_dot(v_a, v_b);
@@ -371,8 +371,8 @@ fn vector3_cross_test() {
             let a_arr: [f32; 3] = rng.gen();
             let b_arr: [f32; 3] = rng.gen();
 
-            let a = Float3::from_array(&a_arr);
-            let b = Float3::from_array(&b_arr);
+            let a = Float3::from_array(a_arr);
+            let b = Float3::from_array(b_arr);
             let v_a = load_float3(a);
             let v_a = vector3_normalize(v_a);
             let v_b = load_float3(b);
@@ -407,8 +407,8 @@ fn quaternion_test() {
             let a_arr: [f32; 4] = rng.gen();
             let b_arr: [f32; 4] = rng.gen();
             
-            let qa = Float4::from_array(&a_arr);
-            let qb = Float4::from_array(&b_arr);
+            let qa = Float4::from_array(a_arr);
+            let qb = Float4::from_array(b_arr);
             let v_qa = load_float4(qa);
             let v_qb = load_float4(qb);
             let v_qa = vector4_normalize(v_qa);
@@ -440,7 +440,7 @@ fn matrix_transpose_test() {
     let mut rng = rand::thread_rng();
     for test in 0..NUM_TEST {
         let arr: [f32; 16] = rng.gen();
-        let a = Float4x4::from_column_array(&arr);
+        let a = Float4x4::from_column_array(arr);
         let m_a = load_float4x4(a);
         let m_ta = matrix_transpose(m_a);
         let res = store_float4x4(m_ta);
@@ -463,8 +463,8 @@ fn matrix_mul_test() {
     for test in 0..NUM_TEST {
         let a_arr: [f32; 16] = rng.gen();
         let b_arr: [f32; 16] = rng.gen();
-        let a = Float4x4::from_column_array(&a_arr);
-        let b = Float4x4::from_column_array(&b_arr);
+        let a = Float4x4::from_column_array(a_arr);
+        let b = Float4x4::from_column_array(b_arr);
         let m_a = load_float4x4(a);
         let m_b = load_float4x4(b);
         let m_res = matrix_mul(m_a, m_b);
@@ -488,7 +488,7 @@ fn matrix_determinant_test() {
     let mut rng = rand::thread_rng();
     for test in 0..NUM_TEST {
         let arr: [f32; 16] = rng.gen();
-        let a = Float4x4::from_column_array(&arr);
+        let a = Float4x4::from_column_array(arr);
         let m_a = load_float4x4(a);
         let det = matrix_determinant(m_a);
 
@@ -505,7 +505,7 @@ fn matrix_inverse_test() {
     let mut rng = rand::thread_rng();
     for test in 0..NUM_TEST {
         let arr: [f32; 16] = rng.gen();
-        let a = Float4x4::from_column_array(&arr);
+        let a = Float4x4::from_column_array(arr);
         let m_a = load_float4x4(a);
         let m_inv_a = matrix_inverse(m_a);
         let inv_a = m_inv_a.map(|m| store_float4x4(m));

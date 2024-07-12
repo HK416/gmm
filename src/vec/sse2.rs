@@ -1,10 +1,15 @@
+use crate::{
+    Boolean2, Boolean3, Boolean4, 
+    UInteger2, UInteger3, UInteger4, 
+    Float2, Float3, Float3x3, Float4, Float4x4, 
+};
+
 #[cfg(target_pointer_width = "32")]
 use core::arch::x86::*;
 
 #[cfg(target_pointer_width = "64")]
 use core::arch::x86_64::*;
 
-use crate::data::*;
 
 
 /// This is the data type used in vector operations.
