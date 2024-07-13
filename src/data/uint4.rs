@@ -6,6 +6,7 @@ use super::uint3::UInteger3;
 
 
 
+/// A structure that stores four-dimensional unsigned integer data.
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct UInteger4 {

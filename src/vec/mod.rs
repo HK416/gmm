@@ -1,19 +1,9 @@
 //! # Vector types
-//! Perform operations such as addition or subtraction.
+//! Vector types are used to perform calculations.
+//! This has a similar purpose to `XMVECTOR` or `XMMATRIX` in the `DirectXMath` library.
 //! 
-//! # Example
-//! ```
-//! use gmm::Float4;
-//! use gmm::vec::*;
-//! 
-//! let data = Float4::new(1.0, 2.0, 3.0, 4.0);
-//! let vec = load_float4(data);
-//! 
-//! /* ...vector operation... */
-//! 
-//! let data = store_float4(vec);
-//! 
-//! ```
+//! It is not appropriate to use vector types to load or store data.
+//! If you want to load or store data, you should use a data type.
 //! 
 //! ### Supports SIMD operations
 //! - `aarch64` - Supports SIMD operations using `neon`.
@@ -25,21 +15,3 @@ mod neon;
 
 #[cfg(all(target_feature = "neon", not(feature = "scalar-math")))]
 pub use self::neon::*;
-
-#[cfg(all(target_feature = "sse2", not(feature = "scalar-math")))]
-mod sse2;
-
-#[cfg(all(target_feature = "sse2", not(feature = "scalar-math")))]
-pub use self::sse2::*;
-
-
-#[cfg(any(feature = "scalar-math", not(any(target_feature = "neon", target_feature = "sse2"))))]
-mod scalar;
-
-#[cfg(any(feature = "scalar-math", not(any(target_feature = "neon", target_feature = "sse2"))))]
-pub use self::scalar::*;
-
-
-
-#[cfg(test)]
-mod tests;

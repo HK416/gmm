@@ -5,6 +5,7 @@ use super::int4::Integer4;
 
 
 
+/// A structure that stores three-dimensional integer data.
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Integer3 {
