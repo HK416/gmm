@@ -125,9 +125,9 @@ impl Vector {
         let mul = self * rhs;
         unsafe {
             let low = vget_low_f32(*mul);
+            let low = vpadd_f32(low, low);
             let high = vdup_laneq_f32::<0b10>(*mul);
             let sum = vadd_f32(low, high);
-            let sum = vpadd_f32(sum, sum);
             return Vector(vcombine_f32(sum, sum));
         }
     }

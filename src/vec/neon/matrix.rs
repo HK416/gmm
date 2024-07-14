@@ -1,6 +1,9 @@
 use core::fmt;
 use core::ops;
 use core::arch::aarch64::*;
+use crate::Float3x3;
+use crate::Float4x4;
+
 use super::Vector;
 
 
@@ -296,6 +299,49 @@ impl Matrix {
                 vmulq_n_f32(inverse[3], recip_det)
             ]))
         }
+    }
+}
+
+impl From<Float3x3> for Matrix {
+    #[inline]
+    fn from(value: Float3x3) -> Self {
+        Self::from(Float4x4::from(value))
+    }
+}
+
+impl Into<Float3x3> for Matrix {
+    #[inline]
+    fn into(self) -> Float3x3 {
+        let value: Float4x4 = self.into();
+        return value.into();
+    }
+}
+
+impl From<Float4x4> for Matrix {
+    #[inline]
+    fn from(value: Float4x4) -> Self {
+        unsafe { 
+            Matrix([
+                vld1q_f32(&value[0] as *const _ as *const f32), 
+                vld1q_f32(&value[1] as *const _ as *const f32), 
+                vld1q_f32(&value[2] as *const _ as *const f32), 
+                vld1q_f32(&value[3] as *const _ as *const f32) 
+            ])
+        }
+    }
+}
+
+impl Into<Float4x4> for Matrix {
+    #[inline]
+    fn into(self) -> Float4x4 {
+        let mut value = Float4x4::default();
+        unsafe {
+            vst1q_f32(&mut value[0] as *mut _ as *mut f32, self[0]);
+            vst1q_f32(&mut value[1] as *mut _ as *mut f32, self[1]);
+            vst1q_f32(&mut value[2] as *mut _ as *mut f32, self[2]);
+            vst1q_f32(&mut value[3] as *mut _ as *mut f32, self[3]);
+        }
+        return value;
     }
 }
 

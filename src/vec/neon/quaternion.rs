@@ -68,10 +68,7 @@ impl Quaternion {
     pub fn normalize(self) -> Option<Self> {
         let len = self.len();
         match len <= f32::EPSILON {
-            false => {
-                let recip_len: Quaternion = Float4::fill(len.recip()).into();
-                Some(self * recip_len)
-            }, 
+            false => unsafe { Some(Quaternion(vmulq_n_f32(*self, len.recip()))) }, 
             true => None,
         }
     }
