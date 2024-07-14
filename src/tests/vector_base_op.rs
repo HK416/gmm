@@ -1,8 +1,6 @@
 use rand::Rng;
 use crate::{Float2, Float3, Float4, Vector};
-
-/// Number of tests.
-const NUM_TEST: usize = 1_000_000;
+use super::NUM_TEST;
 
 
 

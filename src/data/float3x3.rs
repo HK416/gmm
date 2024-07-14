@@ -107,6 +107,24 @@ impl From<Float4x4> for Float3x3 {
     }
 }
 
+impl From<[f32; 9]> for Float3x3 {
+    #[inline]
+    fn from(value: [f32; 9]) -> Self {
+        Self::from_column_array(value)
+    }
+}
+
+impl Into<[f32; 9]> for Float3x3 {
+    #[inline]
+    fn into(self) -> [f32; 9] {
+        [
+            self.x_axis.x, self.x_axis.y, self.x_axis.z, 
+            self.y_axis.x, self.y_axis.y, self.y_axis.z, 
+            self.z_axis.x, self.z_axis.y, self.z_axis.z 
+        ]
+    }
+}
+
 impl AsRef<[f32; 9]> for Float3x3 {
     #[inline]
     fn as_ref(&self) -> &[f32; 9] {
@@ -143,6 +161,201 @@ impl ops::IndexMut<usize> for Float3x3 {
             2 => &mut self.z_axis,
             _ => panic!("index out of range!")
         }
+    }
+}
+
+impl ops::Add<Float3x3> for f32 {
+    type Output = Float3x3;
+    /// Adds a matrix elements to scalar value.
+    #[inline]
+    fn add(self, rhs: Float3x3) -> Self::Output {
+        Float3x3 {
+            x_axis: self + rhs.x_axis, 
+            y_axis: self + rhs.y_axis, 
+            z_axis: self + rhs.z_axis 
+        }
+    }
+}
+
+impl ops::Add<f32> for Float3x3 {
+    type Output = Self;
+    /// Adds a scalar value to matrix elements.
+    #[inline]
+    fn add(self, rhs: f32) -> Self::Output {
+        Float3x3 {
+            x_axis: self.x_axis + rhs, 
+            y_axis: self.y_axis + rhs, 
+            z_axis: self.z_axis + rhs 
+        }
+    }
+}
+
+impl ops::AddAssign<f32> for Float3x3 {
+    /// Adds a scalar value to matrix elements. (assign)
+    #[inline]
+    fn add_assign(&mut self, rhs: f32) {
+        *self = *self + rhs
+    }
+}
+
+impl ops::Add<Self> for Float3x3 {
+    type Output = Self;
+    /// Adds two matrices.
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        Float3x3 {
+            x_axis: self.x_axis + rhs.x_axis, 
+            y_axis: self.y_axis + rhs.y_axis, 
+            z_axis: self.z_axis + rhs.z_axis 
+        }
+    }
+}
+
+impl ops::AddAssign<Self> for Float3x3 {
+    /// Adds two matrices. (assign)
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs
+    }
+}
+
+impl ops::Sub<Float3x3> for f32 {
+    type Output = Float3x3;
+    /// Subtracts a matrix elements to scalar value.
+    #[inline]
+    fn sub(self, rhs: Float3x3) -> Self::Output {
+        Float3x3 {
+            x_axis: self - rhs.x_axis, 
+            y_axis: self - rhs.y_axis, 
+            z_axis: self - rhs.z_axis 
+        }
+    }
+}
+
+impl ops::Sub<f32> for Float3x3 {
+    type Output = Self;
+    /// Subtracts a scalar value to matrix elements.
+    #[inline]
+    fn sub(self, rhs: f32) -> Self::Output {
+        Float3x3 {
+            x_axis: self.x_axis - rhs, 
+            y_axis: self.y_axis - rhs, 
+            z_axis: self.z_axis - rhs 
+        }
+    }
+}
+
+impl ops::SubAssign<f32> for Float3x3 {
+    /// Subtracts a scalar value to matrix elements. (assign)
+    #[inline]
+    fn sub_assign(&mut self, rhs: f32) {
+        *self = *self - rhs
+    }
+}
+
+impl ops::Sub<Self> for Float3x3 {
+    type Output = Self;
+    /// Subtracts two matrices.
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        Float3x3 {
+            x_axis: self.x_axis - rhs.x_axis, 
+            y_axis: self.y_axis - rhs.y_axis, 
+            z_axis: self.z_axis - rhs.z_axis 
+        }
+    }
+}
+
+impl ops::SubAssign<Self> for Float3x3 {
+    /// Subtracts two matrices. (assign)
+    #[inline]
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs
+    }
+}
+
+impl ops::Neg for Float3x3 {
+    type Output = Self;
+    /// Nagative.
+    #[inline]
+    fn neg(self) -> Self::Output {
+        Float3x3 {
+            x_axis: -self.x_axis, 
+            y_axis: -self.y_axis, 
+            z_axis: -self.z_axis 
+        }
+    }
+}
+
+impl ops::Mul<Float3x3> for f32 {
+    type Output = Float3x3;
+    /// Multiplies a matrix elements to scalar value.
+    #[inline]
+    fn mul(self, rhs: Float3x3) -> Self::Output {
+        Float3x3 {
+            x_axis: self * rhs.x_axis, 
+            y_axis: self * rhs.y_axis, 
+            z_axis: self * rhs.z_axis 
+        }
+    }
+}
+
+impl ops::Mul<f32> for Float3x3 {
+    type Output = Self;
+    /// Multiplies a scalar value to matrix elements.
+    #[inline]
+    fn mul(self, rhs: f32) -> Self::Output {
+        Float3x3 {
+            x_axis: self.x_axis * rhs, 
+            y_axis: self.y_axis * rhs, 
+            z_axis: self.z_axis * rhs 
+        }
+    }
+}
+
+impl ops::MulAssign<f32> for Float3x3 {
+    /// Multiplies a scalar value to matrix elements. (assign)
+    #[inline]
+    fn mul_assign(&mut self, rhs: f32) {
+        *self = *self * rhs
+    }
+}
+
+impl ops::Mul<Float3> for Float3x3 {
+    type Output = Float3;
+    /// Transformation of the vector.
+    fn mul(self, rhs: Float3) -> Self::Output {
+        Float3 {
+            x: self[0][0] * rhs[0] + self[0][1] * rhs[1] + self[0][2] * rhs[2], 
+            y: self[1][0] * rhs[0] + self[1][1] * rhs[1] + self[1][2] * rhs[2], 
+            z: self[2][0] * rhs[0] + self[2][1] * rhs[1] + self[2][2] * rhs[2] 
+        }
+    }
+}
+
+impl ops::Mul<Self> for Float3x3 {
+    type Output = Self;
+    /// Multiply two matrices.
+    fn mul(self, rhs: Self) -> Self::Output {
+        let mut value = Self::default();
+        for i in 0..3 {
+            for j in 0..3 {
+                let mut sum = 0.0;
+                for k in 0..3 {
+                    sum += self[k][j] * rhs[i][k];
+                }
+                value[i][j] = sum;
+            }
+        }
+        return value;
+    }
+}
+
+impl ops::MulAssign<Self> for Float3x3 {
+    /// Multiply two matrices. (assign)
+    #[inline]
+    fn mul_assign(&mut self, rhs: Self) {
+        *self = *self * rhs
     }
 }
 

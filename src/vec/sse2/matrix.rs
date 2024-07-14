@@ -7,6 +7,9 @@ use core::arch::x86::*;
 #[cfg(target_pointer_width = "64")]
 use core::arch::x86_64::*;
 
+use crate::Float3x3;
+use crate::Float4x4;
+
 use super::Vector;
 
 
@@ -203,16 +206,16 @@ impl Matrix {
             let det = _mm_mul_ps(self[0], row0);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(det, det);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(det, det);
-            let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let sum = _mm_add_ps(sum, mix);
-            let val = _mm_cvtss_f32(sum);
+            let a = _mm_add_ps(low, high);
+            let b = _mm_shuffle_ps::<0b_00_01_00_01>(a, a);
+            let det = _mm_add_ps(a, b);
+            let val = _mm_cvtss_f32(det);
     
             if val.abs() <= f32::EPSILON {
                 return None;
             }
     
-            let one_one_one_one = _mm_load_ps(&ONE_ONE_ONE_ONE as *const f32);
+            let one_one_one_one = _mm_loadu_ps(&ONE_ONE_ONE_ONE as *const f32);
             let recip_det = _mm_div_ps(one_one_one_one, det);
             Some(Matrix([
                 _mm_mul_ps(inverse[0], recip_det), 
@@ -221,6 +224,49 @@ impl Matrix {
                 _mm_mul_ps(inverse[3], recip_det) 
             ]))
         }
+    }
+}
+
+impl From<Float3x3> for Matrix {
+    #[inline]
+    fn from(value: Float3x3) -> Self {
+        Self::from(Float4x4::from(value))
+    }
+}
+
+impl Into<Float3x3> for Matrix {
+    #[inline]
+    fn into(self) -> Float3x3 {
+        let value: Float4x4 = self.into();
+        return value.into();
+    }
+}
+
+impl From<Float4x4> for Matrix {
+    #[inline]
+    fn from(value: Float4x4) -> Self {
+        unsafe { 
+            Matrix([
+                _mm_loadu_ps(&value[0] as *const _ as *const f32), 
+                _mm_loadu_ps(&value[1] as *const _ as *const f32), 
+                _mm_loadu_ps(&value[2] as *const _ as *const f32), 
+                _mm_loadu_ps(&value[3] as *const _ as *const f32) 
+            ])
+        }
+    }
+}
+
+impl Into<Float4x4> for Matrix {
+    #[inline]
+    fn into(self) -> Float4x4 {
+        let mut value = Float4x4::default();
+        unsafe {
+            _mm_storeu_ps(&mut value[0] as *mut _ as *mut f32, self[0]);
+            _mm_storeu_ps(&mut value[1] as *mut _ as *mut f32, self[1]);
+            _mm_storeu_ps(&mut value[2] as *mut _ as *mut f32, self[2]);
+            _mm_storeu_ps(&mut value[3] as *mut _ as *mut f32, self[3]);
+        }
+        return value;
     }
 }
 
@@ -358,132 +404,148 @@ impl ops::Mul<Self> for Matrix {
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e0, e0);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e0, e0);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e0 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e0 = _mm_add_ps(low, high);
 
             let e1 = _mm_mul_ps(rows[1], rhs[0]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e1, e1);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e1, e1);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e1 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e1 = _mm_add_ps(low, high);
 
             let e2 = _mm_mul_ps(rows[2], rhs[0]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e2, e2);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e2, e2);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e2 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e2 = _mm_add_ps(low, high);
 
             let e3 = _mm_mul_ps(rows[3], rhs[0]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e3, e3);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e3, e3);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e3 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e3 = _mm_add_ps(low, high);
 
-            let tran0 = _mm_shuffle_ps::<0b_01_00_01_00>(e0, e1);
-            let tran1 = _mm_shuffle_ps::<0b_01_00_01_00>(e2, e3);
-            let col0 = _mm_shuffle_ps::<0b_01_00_01_00>(tran0, tran1);
+            let tran0 = _mm_shuffle_ps::<0b_00_00_00_00>(e0, e1);
+            let tran1 = _mm_shuffle_ps::<0b_00_00_00_00>(e2, e3);
+            let col0 = _mm_shuffle_ps::<0b_10_00_10_00>(tran0, tran1);
 
 
             let e0 = _mm_mul_ps(rows[0], rhs[1]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e0, e0);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e0, e0);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e0 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e0 = _mm_add_ps(low, high);
 
             let e1 = _mm_mul_ps(rows[1], rhs[1]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e1, e1);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e1, e1);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e1 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e1 = _mm_add_ps(low, high);
 
             let e2 = _mm_mul_ps(rows[2], rhs[1]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e2, e2);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e2, e2);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e2 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e2 = _mm_add_ps(low, high);
 
             let e3 = _mm_mul_ps(rows[3], rhs[1]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e3, e3);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e3, e3);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e3 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e3 = _mm_add_ps(low, high);
 
-            let tran0 = _mm_shuffle_ps::<0b_01_00_01_00>(e0, e1);
-            let tran1 = _mm_shuffle_ps::<0b_01_00_01_00>(e2, e3);
-            let col1 = _mm_shuffle_ps::<0b_01_00_01_00>(tran0, tran1);
+            let tran0 = _mm_shuffle_ps::<0b_00_00_00_00>(e0, e1);
+            let tran1 = _mm_shuffle_ps::<0b_00_00_00_00>(e2, e3);
+            let col1 = _mm_shuffle_ps::<0b_10_00_10_00>(tran0, tran1);
 
 
             let e0 = _mm_mul_ps(rows[0], rhs[2]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e0, e0);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e0, e0);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e0 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e0 = _mm_add_ps(low, high);
 
             let e1 = _mm_mul_ps(rows[1], rhs[2]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e1, e1);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e1, e1);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e1 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e1 = _mm_add_ps(low, high);
 
             let e2 = _mm_mul_ps(rows[2], rhs[2]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e2, e2);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e2, e2);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e2 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e2 = _mm_add_ps(low, high);
 
             let e3 = _mm_mul_ps(rows[3], rhs[2]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e3, e3);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e3, e3);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e3 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e3 = _mm_add_ps(low, high);
 
-            let tran0 = _mm_shuffle_ps::<0b_01_00_01_00>(e0, e1);
-            let tran1 = _mm_shuffle_ps::<0b_01_00_01_00>(e2, e3);
-            let col2 = _mm_shuffle_ps::<0b_01_00_01_00>(tran0, tran1);
+            let tran0 = _mm_shuffle_ps::<0b_00_00_00_00>(e0, e1);
+            let tran1 = _mm_shuffle_ps::<0b_00_00_00_00>(e2, e3);
+            let col2 = _mm_shuffle_ps::<0b_10_00_10_00>(tran0, tran1);
 
 
             let e0 = _mm_mul_ps(rows[0], rhs[3]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e0, e0);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e0, e0);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e0 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e0 = _mm_add_ps(low, high);
 
             let e1 = _mm_mul_ps(rows[1], rhs[3]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e1, e1);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e1, e1);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e1 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e1 = _mm_add_ps(low, high);
 
             let e2 = _mm_mul_ps(rows[2], rhs[3]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e2, e2);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e2, e2);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e2 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e2 = _mm_add_ps(low, high);
 
             let e3 = _mm_mul_ps(rows[3], rhs[3]);
             let low = _mm_shuffle_ps::<0b_01_00_01_00>(e3, e3);
             let high = _mm_shuffle_ps::<0b_11_10_11_10>(e3, e3);
             let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let e3 = _mm_add_ps(sum, mix);
+            let low = _mm_shuffle_ps::<0b_10_00_10_00>(sum, sum);
+            let high = _mm_shuffle_ps::<0b_11_01_11_01>(sum, sum);
+            let e3 = _mm_add_ps(low, high);
 
-            let tran0 = _mm_shuffle_ps::<0b_01_00_01_00>(e0, e1);
-            let tran1 = _mm_shuffle_ps::<0b_01_00_01_00>(e2, e3);
-            let col3 = _mm_shuffle_ps::<0b_01_00_01_00>(tran0, tran1);
+            let tran0 = _mm_shuffle_ps::<0b_00_00_00_00>(e0, e1);
+            let tran1 = _mm_shuffle_ps::<0b_00_00_00_00>(e2, e3);
+            let col3 = _mm_shuffle_ps::<0b_10_00_10_00>(tran0, tran1);
             
             return Matrix([col0, col1, col2, col3]);
         }

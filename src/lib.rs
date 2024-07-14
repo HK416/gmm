@@ -1,6 +1,34 @@
 //! # Game Math for Me
 //! A math library for video games that allow independent management of data.
 //! Just like [DirectXMath](https://github.com/microsoft/DirectXMath), data and vectors are divided.
+//!
+//! ### Example (Without SIMD)
+//! ```
+//! use gmm::Float4;
+//! 
+//! let a = Float4::new(1.0, 2.0, 3.0, 4.0);
+//! let s = Float4::fill(5.0);
+//! let res = a + s;
+//! 
+//! println!("{} + {} = {}", a, s, res);
+//! ```
+//! 
+//! ### Example (With SIMD)
+//! ```
+//! use gmm::Float4;
+//! use gmm::Vector;
+//! 
+//! let a = Float4::new(1.0, 2.0, 3.0, 4.0);
+//! let s = Float4::fill(5.0);
+//! 
+//! let v_a: Vector = a.into();
+//! let v_s: Vector = s.into();
+//! let v_res = v_a + v_s;
+//! 
+//! let res: Float4 = v_res.into();
+//! 
+//! println!("{} + {} = {}", a, s, res);
+//! ```
 //! 
 //! # Features
 //! ### Supports SIMD operations
@@ -50,3 +78,5 @@ pub use self::data::UInteger4;
 
 pub use self::vec::Vector;
 pub use self::vec::VectorInt;
+pub use self::vec::Quaternion;
+pub use self::vec::Matrix;
