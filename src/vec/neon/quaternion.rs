@@ -109,6 +109,21 @@ impl ops::DerefMut for Quaternion {
     }
 }
 
+impl From<[f32; 4]> for Quaternion {
+    #[inline]
+    fn from(value: [f32; 4]) -> Self {
+        Self::from(Float4::from(value))
+    }
+}
+
+impl Into<[f32; 4]> for Quaternion {
+    #[inline]
+    fn into(self) -> [f32; 4] {
+        let value: Float4 = self.into();
+        value.into()
+    }
+}
+
 impl From<Vector> for Quaternion {
     #[inline]
     fn from(value: Vector) -> Self {

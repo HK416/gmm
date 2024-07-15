@@ -302,6 +302,21 @@ impl Matrix {
     }
 }
 
+impl From<[f32; 16]> for Matrix {
+    #[inline]
+    fn from(value: [f32; 16]) -> Self {
+        Self::from(Float4x4::from(value))
+    }
+}
+
+impl Into<[f32; 16]> for Matrix {
+    #[inline]
+    fn into(self) -> [f32; 16] {
+        let value: Float4x4 = self.into();
+        value.into()
+    }
+}
+
 impl From<Float3x3> for Matrix {
     #[inline]
     fn from(value: Float3x3) -> Self {

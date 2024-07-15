@@ -41,6 +41,17 @@ impl Float3x3 {
         }
     }
 
+    /// Convert to array.
+    #[inline]
+    #[must_use]
+    pub const fn to_column_array(self) -> [f32; 9] {
+        [
+            self.x_axis.x, self.x_axis.y, self.x_axis.z, 
+            self.y_axis.x, self.y_axis.y, self.y_axis.z, 
+            self.z_axis.x, self.z_axis.y, self.z_axis.z 
+        ]
+    }
+
     /// Creates with given slice.
     /// 
     /// # Panics
@@ -60,12 +71,19 @@ impl Float3x3 {
     /// Creates with given tuple.
     #[inline]
     #[must_use]
-    pub fn from_column_tuple(tuple: (Float3, Float3, Float3)) -> Self {
+    pub const fn from_column_tuple(tuple: (Float3, Float3, Float3)) -> Self {
         Self { 
             x_axis: tuple.0, 
             y_axis: tuple.1, 
             z_axis: tuple.2 
         }
+    }
+
+    /// Convert to tuple.
+    #[inline]
+    #[must_use]
+    pub const fn to_column_tuple(self) -> (Float3, Float3, Float3) {
+        (self.x_axis, self.y_axis, self.z_axis)
     }
 
     /// Returns `true` if at least one element of the matrix is [`f32::NAN`].
@@ -117,11 +135,21 @@ impl From<[f32; 9]> for Float3x3 {
 impl Into<[f32; 9]> for Float3x3 {
     #[inline]
     fn into(self) -> [f32; 9] {
-        [
-            self.x_axis.x, self.x_axis.y, self.x_axis.z, 
-            self.y_axis.x, self.y_axis.y, self.y_axis.z, 
-            self.z_axis.x, self.z_axis.y, self.z_axis.z 
-        ]
+        self.to_column_array()
+    }
+}
+
+impl From<(Float3, Float3, Float3)> for Float3x3 {
+    #[inline]
+    fn from(value: (Float3, Float3, Float3)) -> Self {
+        Self::from_column_tuple(value)
+    }
+}
+
+impl Into<(Float3, Float3, Float3)> for Float3x3 {
+    #[inline]
+    fn into(self) -> (Float3, Float3, Float3) {
+        self.to_column_tuple()
     }
 }
 

@@ -244,6 +244,21 @@ impl Vector {
     }
 }
 
+impl From<[f32; 4]> for Vector {
+    #[inline]
+    fn from(value: [f32; 4]) -> Self {
+        Self::from(Float4::from(value))
+    }
+}
+
+impl Into<[f32; 4]> for Vector {
+    #[inline]
+    fn into(self) -> [f32; 4] {
+        let value: Float4 = self.into();
+        value.into()
+    }
+}
+
 impl From<VectorInt> for Vector {
     #[inline]
     fn from(value: VectorInt) -> Self {

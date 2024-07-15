@@ -43,6 +43,18 @@ impl Float4x4 {
         }
     }
 
+    /// Convert to array.
+    #[inline]
+    #[must_use]
+    pub const fn to_column_array(self) -> [f32; 16] {
+        [
+            self.x_axis.x, self.x_axis.y, self.x_axis.z, self.x_axis.w, 
+            self.y_axis.x, self.y_axis.y, self.y_axis.z, self.y_axis.w, 
+            self.z_axis.x, self.z_axis.y, self.z_axis.z, self.z_axis.w, 
+            self.w_axis.x, self.w_axis.y, self.w_axis.z, self.w_axis.w 
+        ]
+    }
+
     /// Creates with given array.
     /// 
     /// # Panics
@@ -63,13 +75,20 @@ impl Float4x4 {
     /// Creates with given tuple.
     #[inline]
     #[must_use]
-    pub fn from_column_tuple(tuple: (Float4, Float4, Float4, Float4)) -> Self {
+    pub const fn from_column_tuple(tuple: (Float4, Float4, Float4, Float4)) -> Self {
         Self { 
             x_axis: tuple.0, 
             y_axis: tuple.1, 
             z_axis: tuple.2, 
             w_axis: tuple.3 
         }
+    }
+
+    /// Convert to tuple.
+    #[inline]
+    #[must_use]
+    pub const fn to_column_tuple(self) -> (Float4, Float4, Float4, Float4) {
+        (self.x_axis, self.y_axis, self.z_axis, self.w_axis)
     }
 
     /// Returns `true` if at least one element of the matrix is [`f32::NAN`].
@@ -124,12 +143,21 @@ impl From<[f32; 16]> for Float4x4 {
 impl Into<[f32; 16]> for Float4x4 {
     #[inline]
     fn into(self) -> [f32; 16] {
-        [
-            self.x_axis.x, self.x_axis.y, self.x_axis.z, self.x_axis.w, 
-            self.y_axis.x, self.y_axis.y, self.y_axis.z, self.y_axis.w, 
-            self.z_axis.x, self.z_axis.y, self.z_axis.z, self.z_axis.w, 
-            self.w_axis.x, self.w_axis.y, self.w_axis.z, self.w_axis.w 
-        ]
+        self.to_column_array()
+    }
+}
+
+impl From<(Float4, Float4, Float4, Float4)> for Float4x4 {
+    #[inline]
+    fn from(value: (Float4, Float4, Float4, Float4)) -> Self {
+        Self::from_column_tuple(value)
+    }
+}
+
+impl Into<(Float4, Float4, Float4, Float4)> for Float4x4 {
+    #[inline]
+    fn into(self) -> (Float4, Float4, Float4, Float4) {
+        self.to_column_tuple()
     }
 }
 

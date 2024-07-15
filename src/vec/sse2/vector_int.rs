@@ -78,6 +78,36 @@ impl VectorInt {
     }
 }
 
+impl From<[i32; 4]> for VectorInt {
+    #[inline]
+    fn from(value: [i32; 4]) -> Self {
+        Self::from(Integer4::from(value))
+    }
+}
+
+impl Into<[i32; 4]> for VectorInt {
+    #[inline]
+    fn into(self) -> [i32; 4] {
+        let value: Integer4 = self.into();
+        value.into()
+    }
+}
+
+impl From<[u32; 4]> for VectorInt {
+    #[inline]
+    fn from(value: [u32; 4]) -> Self {
+        Self::from(UInteger4::from(value))
+    }
+}
+
+impl Into<[u32; 4]> for VectorInt {
+    #[inline]
+    fn into(self) -> [u32; 4] {
+        let value: UInteger4 = self.into();
+        value.into()
+    }
+}
+
 impl From<Vector> for VectorInt {
     #[inline]
     fn from(value: Vector) -> Self {
