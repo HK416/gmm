@@ -22,6 +22,13 @@ macro_rules! impl_element3 {
                 Self { x: arr[0], y: arr[1], z: arr[2] }
             }
 
+            /// Convert to array.
+            #[inline]
+            #[must_use]
+            pub const fn to_array(self) -> [$s; 3] {
+                [self.x, self.y, self.z]
+            }
+
             /// Creates with given slice.
             /// 
             /// # Panics
@@ -40,33 +47,64 @@ macro_rules! impl_element3 {
             pub const fn from_tuple(tuple: ($s, $s, $s)) -> Self {
                 Self { x: tuple.0, y: tuple.1, z: tuple.2 }
             }
+
+            /// Convert to tuple.
+            #[inline]
+            #[must_use]
+            pub const fn to_tuple(self) -> ($s, $s, $s) {
+                (self.x, self.y, self.z)
+            }
+
+            /// Sets the value of the x element.
+            #[inline]
+            #[must_use]
+            pub fn set_x(mut self, x: $s) -> $t {
+                self.x = x;
+                self
+            }
+
+            /// Sets the value of the y element.
+            #[inline]
+            #[must_use]
+            pub fn set_y(mut self, y: $s) -> $t {
+                self.y = y;
+                self
+            }
+
+            /// Sets the value of the z element.
+            #[inline]
+            #[must_use]
+            pub fn set_z(mut self, z: $s) -> $t {
+                self.z = z;
+                self
+            }
         }
 
         impl From<[$s; 3]> for $t {
             #[inline]
             fn from(value: [$s; 3]) -> Self {
-                Self { x: value[0], y: value[1], z: value[2] }
+                Self::from_array(value)
             }
         }
 
         impl Into<[$s; 3]> for $t {
             #[inline]
             fn into(self) -> [$s; 3] {
-                [self.x, self.y, self.z]
+                self.to_array()
             }
         }
 
         impl From<($s, $s, $s)> for $t {
             #[inline]
             fn from(value: ($s, $s, $s)) -> Self {
-                Self { x: value.0, y: value.1, z: value.2 }
+                Self::from_tuple(value)
             }
         }
 
         impl Into<($s, $s, $s)> for $t {
             #[inline]
             fn into(self) -> ($s, $s, $s) {
-                (self.x, self.y, self.z)
+                self.to_tuple()
             }
         }
 

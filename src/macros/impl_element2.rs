@@ -22,6 +22,13 @@ macro_rules! impl_element2 {
                 Self { x: arr[0], y: arr[1] }
             }
 
+            /// Convert to array.
+            #[inline]
+            #[must_use]
+            pub const fn to_array(self) -> [$s; 2] {
+                [self.x, self.y]
+            }
+
             /// Creates with given slice.
             /// 
             /// # Panics
@@ -40,33 +47,56 @@ macro_rules! impl_element2 {
             pub const fn from_tuple(tuple: ($s, $s)) -> Self {
                 Self { x: tuple.0, y: tuple.1 }
             }
+
+            /// Convert to tuple.
+            #[inline]
+            #[must_use]
+            pub const fn to_tuple(self) -> ($s, $s) {
+                (self.x, self.y)
+            }
+
+            /// Sets the value of the x element.
+            #[inline]
+            #[must_use]
+            pub fn set_x(mut self, x: $s) -> $t {
+                self.x = x;
+                self
+            }
+
+            /// Sets the value of the y element.
+            #[inline]
+            #[must_use]
+            pub fn set_y(mut self, y: $s) -> $t {
+                self.y = y;
+                self
+            }
         }
 
         impl From<[$s; 2]> for $t {
             #[inline]
             fn from(value: [$s; 2]) -> Self {
-                Self { x: value[0], y: value[1] }
+                Self::from_array(value)
             }
         }
 
         impl Into<[$s; 2]> for $t {
             #[inline]
             fn into(self) -> [$s; 2] {
-                [self.x, self.y]
+                self.to_array()
             }
         }
 
         impl From<($s, $s)> for $t {
             #[inline]
             fn from(value: ($s, $s)) -> Self {
-                Self { x: value.0, y: value.1 }
+                Self::from_tuple(value)
             }
         }
 
         impl Into<($s, $s)> for $t {
             #[inline]
             fn into(self) -> ($s, $s) {
-                (self.x, self.y)
+                self.to_tuple()
             }
         }
 
