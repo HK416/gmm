@@ -1,12 +1,13 @@
 use core::fmt;
 use core::ops;
 use core::arch::aarch64::*;
-use super::{Vector, VectorInt};
-use crate::Float4;
+use crate::{ Vector, VectorInt, Float4 };
 
 
 
 /// This is a quaternion data type that uses the `SIMD` instruction.
+/// 
+/// Using the `scalar-math` feature disables the use of `SIMD` instructions.
 /// 
 /// It is recommended not to use this data types as a member of a structure.
 /// 

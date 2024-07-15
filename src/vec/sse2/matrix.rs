@@ -7,14 +7,13 @@ use core::arch::x86::*;
 #[cfg(target_pointer_width = "64")]
 use core::arch::x86_64::*;
 
-use crate::Float3x3;
-use crate::Float4x4;
-
-use super::Vector;
+use crate::{ Vector, Float3x3, Float4x4 };
 
 
 
 /// This is a matrix data type that uses the `SIMD` instruction.
+/// 
+/// Using the `scalar-math` feature disables the use of `SIMD` instructions.
 /// 
 /// It is recommended not to use this data types as a member of a structure.
 /// 

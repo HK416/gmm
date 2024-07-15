@@ -1,14 +1,8 @@
 use core::fmt;
 use core::ops;
-
-#[cfg(target_pointer_width = "32")]
-use core::arch::x86::*;
-
-#[cfg(target_pointer_width = "64")]
-use core::arch::x86_64::*;
-
-use crate::{
-    Vector, 
+use std::mem;
+use crate::{ 
+    Vector, Boolean4, 
     Integer2, Integer3, Integer4, 
     UInteger2, UInteger3, UInteger4, 
 };
@@ -23,43 +17,73 @@ use crate::{
 /// 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
-pub struct VectorInt(pub(crate) __m128i);
+pub struct VectorInt(pub(crate) Integer4);
 
 impl VectorInt {
     /// Takes the samller of the elements of the two vectors.
     #[inline]
     pub fn min(self, rhs: Self) -> Self {
-        unsafe { VectorInt(_mm_min_epi32(*self, *rhs)) }
+        Integer4 {
+            x: self[0].min(rhs[0]), 
+            y: self[1].min(rhs[1]), 
+            z: self[2].min(rhs[2]), 
+            w: self[3].min(rhs[3]) 
+        }.into()
     }
 
     /// Takes the larger of the elements of the two vectors.
     #[inline]
     pub fn max(self, rhs: Self) -> Self {
-        unsafe { VectorInt(_mm_max_epi32(*self, *rhs)) }
+        Integer4 {
+            x: self[0].max(rhs[0]), 
+            y: self[1].max(rhs[1]), 
+            z: self[2].max(rhs[2]), 
+            w: self[3].max(rhs[3]) 
+        }.into()
     }
 
     /// Checks if the elements of two vectors are less.
     #[inline]
     pub fn lt(self, rhs: Self) -> VectorInt {
-        unsafe { VectorInt(_mm_cmplt_epi32(*self, *rhs)) }
+        UInteger4::from(Boolean4 {
+            x: self[0].lt(&rhs[0]), 
+            y: self[1].lt(&rhs[1]), 
+            z: self[2].lt(&rhs[2]), 
+            w: self[3].lt(&rhs[3]) 
+        }).into()
     }
 
     /// Checks if the elements of two vectors are less than or eqaul.
     #[inline]
     pub fn le(self, rhs: Self) -> VectorInt {
-        self.lt(rhs) | self.eq(rhs)
+        UInteger4::from(Boolean4 {
+            x: self[0].le(&rhs[0]), 
+            y: self[1].le(&rhs[1]), 
+            z: self[2].le(&rhs[2]), 
+            w: self[3].le(&rhs[3]) 
+        }).into()
     }
 
     /// Checks if the elements of two vectors are greater.
     #[inline]
     pub fn gt(self, rhs: Self) -> VectorInt {
-        unsafe { VectorInt(_mm_cmpgt_epi32(*self, *rhs)) }
+        UInteger4::from(Boolean4 {
+            x: self[0].gt(&rhs[0]), 
+            y: self[1].gt(&rhs[1]), 
+            z: self[2].gt(&rhs[2]), 
+            w: self[3].gt(&rhs[3]) 
+        }).into()
     }
 
     /// Checks if the elements of two vectors are greater than or eqaul.
     #[inline]
     pub fn ge(self, rhs: Self) -> VectorInt {
-        self.gt(rhs) | self.eq(rhs)
+        UInteger4::from(Boolean4 {
+            x: self[0].ge(&rhs[0]), 
+            y: self[1].ge(&rhs[1]), 
+            z: self[2].ge(&rhs[2]), 
+            w: self[3].ge(&rhs[3]) 
+        }).into()
     }
 
     /// Checks if the elements of two vectors are eqaul.
@@ -68,7 +92,12 @@ impl VectorInt {
     /// 
     #[inline]
     pub fn eq(self, rhs: Self) -> VectorInt {
-        unsafe { VectorInt(_mm_cmpeq_epi32(*self, *rhs)) }
+        UInteger4::from(Boolean4 {
+            x: self[0].eq(&rhs[0]), 
+            y: self[1].eq(&rhs[1]), 
+            z: self[2].eq(&rhs[2]), 
+            w: self[3].eq(&rhs[3]) 
+        }).into()
     }
 
     /// Checks if the elements of two vectors are not eqaul.
@@ -114,7 +143,15 @@ impl Into<[u32; 4]> for VectorInt {
 impl From<Vector> for VectorInt {
     #[inline]
     fn from(value: Vector) -> Self {
-        unsafe { VectorInt(_mm_castps_si128(*value)) }
+        use core::mem;
+        unsafe {
+            Self(Integer4 {
+                x: mem::transmute(value[0]), 
+                y: mem::transmute(value[1]), 
+                z: mem::transmute(value[2]), 
+                w: mem::transmute(value[3]) 
+            })
+        }
     }
 }
 
@@ -151,16 +188,14 @@ impl Into<Integer3> for VectorInt {
 impl From<Integer4> for VectorInt {
     #[inline]
     fn from(value: Integer4) -> Self {
-        unsafe { VectorInt(_mm_loadu_si128(&value as *const _ as *const __m128i)) }
+        Self(value)
     }
 }
 
 impl Into<Integer4> for VectorInt {
     #[inline]
     fn into(self) -> Integer4 {
-        let mut result = Integer4::default();
-        unsafe { _mm_storeu_si128(&mut result as *mut _ as *mut __m128i, *self) };
-        return result;
+        *self
     }
 }
 
@@ -197,21 +232,35 @@ impl Into<UInteger3> for VectorInt {
 impl From<UInteger4> for VectorInt {
     #[inline]
     fn from(value: UInteger4) -> Self {
-        unsafe { VectorInt(_mm_loadu_si128(&value as *const _ as *const __m128i)) }
+        use core::mem;
+        unsafe {
+            Self(Integer4 { 
+                x: mem::transmute(value[0]), 
+                y: mem::transmute(value[1]), 
+                z: mem::transmute(value[2]), 
+                w: mem::transmute(value[3]) 
+            })
+        }
     }
 }
 
 impl Into<UInteger4> for VectorInt {
     #[inline]
     fn into(self) -> UInteger4 {
-        let mut result = UInteger4::default();
-        unsafe { _mm_storeu_si128(&mut result as *mut _ as *mut __m128i, *self) };
-        return result;
+        use core::mem;
+        unsafe {
+            UInteger4 { 
+                x: mem::transmute(self[0]), 
+                y: mem::transmute(self[1]), 
+                z: mem::transmute(self[2]), 
+                w: mem::transmute(self[3]) 
+            }
+        }
     }
 }
 
 impl ops::Deref for VectorInt {
-    type Target = __m128i;
+    type Target = Integer4;
     #[inline]
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -230,7 +279,7 @@ impl ops::Add<Self> for VectorInt {
     /// Adds two vectors.
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        unsafe { VectorInt(_mm_add_epi32(*self, *rhs)) }
+        VectorInt(*self + *rhs)
     }
 }
 
@@ -247,7 +296,7 @@ impl ops::Sub<Self> for VectorInt {
     /// Subtracts two vectors.
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        unsafe { VectorInt(_mm_sub_epi32(*self, *rhs)) }
+        VectorInt(*self + *rhs)
     }
 }
 
@@ -264,7 +313,7 @@ impl ops::Neg for VectorInt {
     /// Nagative.
     #[inline]
     fn neg(self) -> Self::Output {
-        unsafe { VectorInt(_mm_sub_epi32(_mm_setzero_si128(), *self)) }
+        VectorInt(-*self)
     }
 }
 
@@ -273,7 +322,7 @@ impl ops::Mul<Self> for VectorInt {
     /// Element-wise multiplication of two vectors.
     #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
-        unsafe { VectorInt(_mm_mul_epi32(*self, *rhs)) }
+        VectorInt(*self * *rhs)
     }
 }
 
@@ -290,7 +339,7 @@ impl ops::BitAnd<Self> for VectorInt {
     /// Element-wise bit `AND` operation of two vectors. 
     #[inline]
     fn bitand(self, rhs: Self) -> Self::Output {
-        unsafe { VectorInt(_mm_and_si128(*self, *rhs)) }
+        VectorInt(*self & *rhs)
     }
 }
 
@@ -307,7 +356,7 @@ impl ops::BitOr<Self> for VectorInt {
     /// Element-wise bit `OR` operation of two vectors.
     #[inline]
     fn bitor(self, rhs: Self) -> Self::Output {
-        unsafe { VectorInt(_mm_or_si128(*self, *rhs)) }
+        VectorInt(*self | *rhs)
     }
 }
 
@@ -324,7 +373,7 @@ impl ops::BitXor<Self> for VectorInt {
     /// Element-wise bit `XOR` operation of two vectors. 
     #[inline]
     fn bitxor(self, rhs: Self) -> Self::Output {
-        unsafe { VectorInt(_mm_xor_si128(*self, *rhs)) }
+        VectorInt(*self ^ *rhs)
     }
 }
 
@@ -341,7 +390,7 @@ impl ops::Not for VectorInt {
     /// Element-wise bit `NOT` operation of two vectors.
     #[inline]
     fn not(self) -> Self::Output {
-        unsafe { VectorInt(_mm_xor_si128(_mm_set1_epi32(-1) ,*self)) }
+        VectorInt(!*self)
     }
 }
 

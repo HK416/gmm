@@ -1,13 +1,10 @@
 use core::fmt;
 use core::ops;
-
-#[cfg(target_pointer_width = "32")]
-use core::arch::x86::*;
-
-#[cfg(target_pointer_width = "64")]
-use core::arch::x86_64::*;
-
-use crate::{ VectorInt, Float2, Float3, Float4 };
+use crate::{ 
+    VectorInt, 
+    Boolean4, UInteger4, 
+    Float2, Float3, Float4, 
+};
 
 
 
@@ -19,51 +16,73 @@ use crate::{ VectorInt, Float2, Float3, Float4 };
 /// 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
-pub struct Vector(pub(crate) __m128);
+pub struct Vector(pub(crate) Float4);
 
 impl Vector {
     /// Takes the samller of the elements of the two vectors.
     #[inline]
     pub fn min(self, rhs: Self) -> Self {
-        unsafe { Vector(_mm_min_ps(*self, *rhs)) }
+        Float4 {
+            x: self[0].min(rhs[0]), 
+            y: self[1].min(rhs[1]), 
+            z: self[2].min(rhs[2]), 
+            w: self[3].min(rhs[3]) 
+        }.into()
     }
 
     /// Takes the larger of the elements of the two vectors.
     #[inline]
     pub fn max(self, rhs: Self) -> Self {
-        unsafe { Vector(_mm_max_ps(*self, *rhs)) }
+        Float4 { 
+            x: self[0].max(rhs[0]), 
+            y: self[1].max(rhs[1]), 
+            z: self[2].max(rhs[2]), 
+            w: self[3].max(rhs[3]) 
+        }.into()
     }
 
     /// Checks if the elements of two vectors are less.
     #[inline]
     pub fn lt(self, rhs: Self) -> VectorInt {
-        unsafe { 
-            let comp = _mm_cmplt_ps(*self, *rhs);
-            let cast = _mm_castps_si128(comp);
-            return VectorInt(cast); 
-        }
+        UInteger4::from(Boolean4 {
+            x: self[0].lt(&rhs[0]), 
+            y: self[1].lt(&rhs[1]), 
+            z: self[2].lt(&rhs[2]), 
+            w: self[3].lt(&rhs[3]) 
+        }).into()
     }
 
     /// Checks if the elements of two vectors are less than or eqaul.
     #[inline]
-    pub fn le(self, rhs: Self) -> VectorInt { 
-        self.lt(rhs) | self.eq(rhs)
+    pub fn le(self, rhs: Self) -> VectorInt {
+        UInteger4::from(Boolean4 {
+            x: self[0].le(&rhs[0]), 
+            y: self[1].le(&rhs[1]), 
+            z: self[2].le(&rhs[2]), 
+            w: self[3].le(&rhs[3]) 
+        }).into()
     }
 
     /// Checks if the elements of two vectors are greater.
     #[inline]
     pub fn gt(self, rhs: Self) -> VectorInt {
-        unsafe {
-            let comp = _mm_cmpgt_ps(*self, *rhs);
-            let cast = _mm_castps_si128(comp);
-            return VectorInt(cast);
-        }
+        UInteger4::from(Boolean4 {
+            x: self[0].gt(&rhs[0]), 
+            y: self[1].gt(&rhs[1]), 
+            z: self[2].gt(&rhs[2]), 
+            w: self[3].gt(&rhs[3]) 
+        }).into()
     }
 
     /// Checks if the elements of two vectors are greater than or eqaul.
     #[inline]
     pub fn ge(self, rhs: Self) -> VectorInt {
-        self.gt(rhs) | self.eq(rhs)
+        UInteger4::from(Boolean4 {
+            x: self[0].ge(&rhs[0]), 
+            y: self[1].ge(&rhs[1]), 
+            z: self[2].ge(&rhs[2]), 
+            w: self[3].ge(&rhs[3]) 
+        }).into()
     }
 
     /// Checks if the elements of two vectors are eqaul.
@@ -72,11 +91,12 @@ impl Vector {
     /// 
     #[inline]
     pub fn eq(self, rhs: Self) -> VectorInt {
-        unsafe {
-            let comp = _mm_cmpeq_ps(*self, *rhs);
-            let cast = _mm_castps_si128(comp);
-            return VectorInt(cast);
-        }
+        UInteger4::from(Boolean4 {
+            x: self[0].eq(&rhs[0]), 
+            y: self[1].eq(&rhs[1]), 
+            z: self[2].eq(&rhs[2]), 
+            w: self[3].eq(&rhs[3]) 
+        }).into()
     }
 
     /// Checks if the elements of two vectors are not eqaul.
@@ -93,79 +113,82 @@ impl Vector {
     /// Absolute value on vector elements.
     #[inline]
     pub fn abs(self) -> Self {
-        self.max(-self)
+        Float4 {
+            x: self[0].abs(), 
+            y: self[1].abs(), 
+            z: self[2].abs(), 
+            w: self[3].abs() 
+        }.into()
     }
     
     /// Return a vector filled by adding all the elements of the vector.
     #[inline]
     pub fn sum(self) -> Self {
-        unsafe {
-            let low = _mm_shuffle_ps::<0b_01_00_01_00>(*self, *self);
-            let high = _mm_shuffle_ps::<0b_11_10_11_10>(*self, *self);
-            let sum = _mm_add_ps(low, high);
-            let mix = _mm_shuffle_ps::<0b_10_11_00_01>(sum, sum);
-            let sum = _mm_add_ps(sum, mix);
-            return Vector(sum);
-        }
+        Float4 {
+            x: self[0] + self[1] + self[2] + self[3], 
+            y: self[0] + self[1] + self[2] + self[3], 
+            z: self[0] + self[1] + self[2] + self[3], 
+            w: self[0] + self[1] + self[2] + self[3] 
+        }.into()
     }
 
     /// Dot product of tow two-element vectors.
     #[inline]
     pub fn vec2_dot(self, rhs: Self) -> Vector {
         let mul = self * rhs;
-        unsafe {
-            let a = _mm_shuffle_ps::<0b_01_00_01_00>(*mul, *mul);
-            let b = _mm_shuffle_ps::<0b_00_01_00_01>(*mul, *mul);
-            let sum = _mm_add_ps(a, b);
-            return Vector(sum);
-        }
+        Float4 {
+            x: mul[0] + mul[1], 
+            y: mul[0] + mul[1], 
+            z: mul[0] + mul[1], 
+            w: mul[0] + mul[1] 
+        }.into()
     }
 
     /// Dot product of tow three-element vectors.
     #[inline]
     pub fn vec3_dot(self, rhs: Self) -> Vector {
         let mul = self * rhs;
-        unsafe {
-            let a = _mm_shuffle_ps::<0b_01_00_01_00>(*mul, *mul);
-            let b = _mm_shuffle_ps::<0b_00_01_00_01>(*mul, *mul);
-            let c = _mm_shuffle_ps::<0b_10_10_10_10>(*mul, *mul);
-            let sum = _mm_add_ps(a, b);
-            let sum = _mm_add_ps(sum, c);
-            return Vector(sum);
-        }
+        Float4 {
+            x: mul[0] + mul[1] + mul[2], 
+            y: mul[0] + mul[1] + mul[2], 
+            z: mul[0] + mul[1] + mul[2], 
+            w: mul[0] + mul[1] + mul[2] 
+        }.into()
     }
 
     /// Dot product of two four-element vectors.
     #[inline]
     pub fn vec4_dot(self, rhs: Self) -> Vector {
-        (self * rhs).sum()
+        let mul = self * rhs;
+        Float4 {
+            x: mul[0] + mul[1] + mul[2] + mul[3], 
+            y: mul[0] + mul[1] + mul[2] + mul[3], 
+            z: mul[0] + mul[1] + mul[2] + mul[3], 
+            w: mul[0] + mul[1] + mul[2] + mul[3] 
+        }.into()
     }
 
     /// Cross product of two three-element vectors.
     #[inline]
     pub fn vec3_cross(self, rhs: Self) -> Vector {
-        const MASK_XYZ: [f32; 4] = [1.0, 1.0, 1.0, 0.0];
-        unsafe {
-            let ly_lz_lx = _mm_shuffle_ps::<0b_00_00_10_01>(*self, *self);
-            let lz_lx_ly = _mm_shuffle_ps::<0b_00_01_00_10>(*self, *self);
-            let rz_rx_ry = _mm_shuffle_ps::<0b_00_01_00_10>(*rhs, *rhs);
-            let ry_rz_rx = _mm_shuffle_ps::<0b_00_00_10_01>(*rhs, *rhs);
-            
-            let a = _mm_mul_ps(ly_lz_lx, rz_rx_ry);
-            let b = _mm_mul_ps(lz_lx_ly, ry_rz_rx);
-            let result = _mm_sub_ps(a, b);
-            
-            let mask = _mm_loadu_ps(&MASK_XYZ as *const _ as *const f32);
-            let result = _mm_mul_ps(result, mask);
-
-            return Vector(result);
-        }
+        // self=[ax, ay, az], rhs=[bx, by, bz]
+        // x: ay*bz - az*by
+        // y: az*bx - ax*bz
+        // z: ax*by - ay*bx
+        // w: 0.0
+        //
+        Float4 {
+            x: self[1] * rhs[2] - self[2] * rhs[1], 
+            y: self[2] * rhs[0] - self[0] * rhs[2], 
+            z: self[0] * rhs[1] - self[1] * rhs[0], 
+            w: 0.0
+        }.into()
     }
 
     /// Length squared of a two-element vector.
     #[inline]
     pub fn vec2_len_sq(self) -> f32 {
-        unsafe { _mm_cvtss_f32(*self.vec2_dot(self)) }
+        self.vec2_dot(self).x
     }
 
     /// Length of a two-element vector.
@@ -177,7 +200,7 @@ impl Vector {
     /// Length squared of a three-element vector.
     #[inline]
     pub fn vec3_len_sq(self) -> f32 {
-        unsafe { _mm_cvtss_f32(*self.vec3_dot(self)) }
+        self.vec3_dot(self).x
     }
 
     /// Length of a three-element vector.
@@ -189,7 +212,7 @@ impl Vector {
     /// Length squared of a four-element vector.
     #[inline]
     pub fn vec4_len_sq(self) -> f32 {
-        unsafe { _mm_cvtss_f32(*self.vec4_dot(self)) }
+        self.vec4_dot(self).x
     }
 
     /// Length of a four-element vector.
@@ -263,7 +286,15 @@ impl Into<[f32; 4]> for Vector {
 impl From<VectorInt> for Vector {
     #[inline]
     fn from(value: VectorInt) -> Self {
-        unsafe { Vector(_mm_castsi128_ps(*value)) }
+        use core::mem;
+        unsafe { 
+            Self(Float4 { 
+                x: mem::transmute(value[0]), 
+                y: mem::transmute(value[1]), 
+                z: mem::transmute(value[2]), 
+                w: mem::transmute(value[3]) 
+            })
+        }
     }
 }
 
@@ -277,8 +308,7 @@ impl From<Float2> for Vector {
 impl Into<Float2> for Vector {
     #[inline]
     fn into(self) -> Float2 {
-        let value: Float4 = self.into();
-        return Float2::from(value);
+        Float2::from(*self)
     }
 }
 
@@ -292,29 +322,26 @@ impl From<Float3> for Vector {
 impl Into<Float3> for Vector {
     #[inline]
     fn into(self) -> Float3 {
-        let value: Float4 = self.into();
-        return Float3::from(value);
+        Float3::from(*self)
     }
 }
 
 impl From<Float4> for Vector {
     #[inline]
     fn from(value: Float4) -> Self {
-        unsafe { Vector(_mm_loadu_ps(&value as * const _ as *const f32)) }
+        Self(value)
     }
 }
 
 impl Into<Float4> for Vector {
     #[inline]
     fn into(self) -> Float4 {
-        let mut value = Float4::default();
-        unsafe { _mm_storeu_ps(&mut value as *mut _ as *mut f32, self.0) };
-        return value;
+        *self
     }
 }
 
 impl ops::Deref for Vector {
-    type Target = __m128;
+    type Target = Float4;
     #[inline]
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -330,10 +357,10 @@ impl ops::DerefMut for Vector {
 
 impl ops::Add<Self> for Vector {
     type Output = Self;
-    /// Adds two vectors. 
+    /// Adds two vectors.
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        unsafe { Vector(_mm_add_ps(*self, *rhs)) }
+        Vector(*self + *rhs)
     }
 }
 
@@ -350,7 +377,7 @@ impl ops::Sub<Self> for Vector {
     /// Subtracts two vectors.
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        unsafe { Vector(_mm_sub_ps(*self, *rhs)) }
+        Vector(*self - *rhs)
     }
 }
 
@@ -367,7 +394,7 @@ impl ops::Neg for Vector {
     /// Nagative.
     #[inline]
     fn neg(self) -> Self::Output {
-        unsafe { Vector(_mm_sub_ps(_mm_setzero_ps(), *self)) }
+        Vector(-*self)
     }
 }
 
@@ -376,7 +403,7 @@ impl ops::Mul<Self> for Vector {
     /// Element-wise multiplication of two vectors.
     #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
-        unsafe { Vector(_mm_mul_ps(*self, *rhs)) }
+        Vector(*self * *rhs)
     }
 }
 
@@ -393,7 +420,7 @@ impl ops::Div<Self> for Vector {
     /// Element-wise division of two vectors.
     #[inline]
     fn div(self, rhs: Self) -> Self::Output {
-        unsafe { Vector(_mm_div_ps(*self, *rhs)) }
+        Vector(*self / *rhs)
     }
 }
 

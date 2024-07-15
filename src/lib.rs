@@ -2,7 +2,7 @@
 //! A math library for video games that allow independent management of data.
 //! Just like [DirectXMath](https://github.com/microsoft/DirectXMath), data and vectors are divided.
 //!
-//! ### Example (Without SIMD)
+//! # Examples
 //! ```
 //! use gmm::Float4;
 //! 
@@ -13,7 +13,8 @@
 //! println!("{} + {} = {}", a, s, res);
 //! ```
 //! 
-//! ### Example (With SIMD)
+//! or 
+//! 
 //! ```
 //! use gmm::Float4;
 //! use gmm::Vector;
@@ -53,7 +54,6 @@ mod features;
 
 pub mod data;
 pub mod vec;
-// pub mod utils;
 
 
 

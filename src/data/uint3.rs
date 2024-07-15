@@ -667,3 +667,79 @@ impl From<UInteger4> for UInteger3 {
         UInteger3 { x: value.x, y: value.y, z: value.z }
     }
 }
+
+impl core::ops::BitAnd<Self> for UInteger3 {
+    type Output = Self;
+    /// Element-wise bit `AND` operation of two vectors. 
+    #[inline]
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x & rhs.x, 
+            y: self.y & rhs.y, 
+            z: self.z & rhs.z 
+        }
+    }
+}
+
+impl core::ops::BitAndAssign<Self> for UInteger3 {
+    /// Element-wise bit `AND` operation of two vectors. (assign)
+    #[inline]
+    fn bitand_assign(&mut self, rhs: Self) {
+        *self = *self & rhs
+    }
+}
+
+impl core::ops::BitOr<Self> for UInteger3 {
+    type Output = Self;
+    /// Element-wise bit `OR` operation of two vectors.
+    #[inline]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x | rhs.x, 
+            y: self.y | rhs.y, 
+            z: self.z | rhs.z  
+        }
+    }
+}
+
+impl core::ops::BitOrAssign<Self> for UInteger3 {
+    /// Element-wise bit `OR` operation of two vectors. (assign)
+    #[inline]
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = *self | rhs
+    }
+}
+
+impl core::ops::BitXor<Self> for UInteger3 {
+    type Output = Self;
+    /// Element-wise bit `XOR` operation of two vectors.
+    #[inline]
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x ^ rhs.x, 
+            y: self.y ^ rhs.y, 
+            z: self.z ^ rhs.z  
+        }
+    }
+}
+
+impl core::ops::BitXorAssign<Self> for UInteger3 {
+    /// Element-wise bit `XOR` operation of two vectors. (assign)
+    #[inline]
+    fn bitxor_assign(&mut self, rhs: Self) {
+        *self = *self ^ rhs
+    }
+}
+
+impl core::ops::Not for UInteger3 {
+    type Output = Self;
+    /// Element-wise bit `NOT` operation of two vectors. (assign)
+    #[inline]
+    fn not(self) -> Self::Output {
+        Self {
+            x: !self.x, 
+            y: !self.y, 
+            z: !self.z  
+        }
+    }
+}

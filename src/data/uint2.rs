@@ -219,3 +219,75 @@ impl From<UInteger4> for UInteger2 {
         UInteger2 { x: value.x, y: value.y }
     }
 }
+
+impl core::ops::BitAnd<Self> for UInteger2 {
+    type Output = Self;
+    /// Element-wise bit `AND` operation of two vectors. 
+    #[inline]
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x & rhs.x, 
+            y: self.y & rhs.y  
+        }
+    }
+}
+
+impl core::ops::BitAndAssign<Self> for UInteger2 {
+    /// Element-wise bit `AND` operation of two vectors. (assign)
+    #[inline]
+    fn bitand_assign(&mut self, rhs: Self) {
+        *self = *self & rhs
+    }
+}
+
+impl core::ops::BitOr<Self> for UInteger2 {
+    type Output = Self;
+    /// Element-wise bit `OR` operation of two vectors.
+    #[inline]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x | rhs.x, 
+            y: self.y | rhs.y  
+        }
+    }
+}
+
+impl core::ops::BitOrAssign<Self> for UInteger2 {
+    /// Element-wise bit `OR` operation of two vectors. (assign)
+    #[inline]
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = *self | rhs
+    }
+}
+
+impl core::ops::BitXor<Self> for UInteger2 {
+    type Output = Self;
+    /// Element-wise bit `XOR` operation of two vectors.
+    #[inline]
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x ^ rhs.x, 
+            y: self.y ^ rhs.y  
+        }
+    }
+}
+
+impl core::ops::BitXorAssign<Self> for UInteger2 {
+    /// Element-wise bit `XOR` operation of two vectors. (assign)
+    #[inline]
+    fn bitxor_assign(&mut self, rhs: Self) {
+        *self = *self ^ rhs
+    }
+}
+
+impl core::ops::Not for UInteger2 {
+    type Output = Self;
+    /// Element-wise bit `NOT` operation of two vectors. (assign)
+    #[inline]
+    fn not(self) -> Self::Output {
+        Self {
+            x: !self.x, 
+            y: !self.y  
+        }
+    }
+}

@@ -1,12 +1,13 @@
 use core::fmt;
 use core::ops;
 use core::arch::aarch64::*;
-use super::VectorInt;
-use crate::{ Float2, Float3, Float4 };
+use crate::{ VectorInt, Float2, Float3, Float4 };
 
 
 
 /// This is a vector data type that uses the `SIMD` instruction.
+/// 
+/// Using the `scalar-math` feature disables the use of `SIMD` instructions.
 /// 
 /// It is recommended not to use this data type as a member of a structure.
 /// 

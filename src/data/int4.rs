@@ -1777,3 +1777,83 @@ impl core::ops::Neg for Integer4 {
         }
     }
 }
+
+impl core::ops::BitAnd<Self> for Integer4 {
+    type Output = Self;
+    /// Element-wise bit `AND` operation of two vectors. 
+    #[inline]
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x & rhs.x, 
+            y: self.y & rhs.y, 
+            z: self.z & rhs.z, 
+            w: self.w & rhs.w 
+        }
+    }
+}
+
+impl core::ops::BitAndAssign<Self> for Integer4 {
+    /// Element-wise bit `AND` operation of two vectors. (assign)
+    #[inline]
+    fn bitand_assign(&mut self, rhs: Self) {
+        *self = *self & rhs
+    }
+}
+
+impl core::ops::BitOr<Self> for Integer4 {
+    type Output = Self;
+    /// Element-wise bit `OR` operation of two vectors.
+    #[inline]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x | rhs.x, 
+            y: self.y | rhs.y, 
+            z: self.z | rhs.z, 
+            w: self.w | rhs.w 
+        }
+    }
+}
+
+impl core::ops::BitOrAssign<Self> for Integer4 {
+    /// Element-wise bit `OR` operation of two vectors. (assign)
+    #[inline]
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = *self | rhs
+    }
+}
+
+impl core::ops::BitXor<Self> for Integer4 {
+    type Output = Self;
+    /// Element-wise bit `XOR` operation of two vectors.
+    #[inline]
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x ^ rhs.x, 
+            y: self.y ^ rhs.y, 
+            z: self.z ^ rhs.z, 
+            w: self.w ^ rhs.w 
+        }
+    }
+}
+
+impl core::ops::BitXorAssign<Self> for Integer4 {
+    /// Element-wise bit `XOR` operation of two vectors. (assign)
+    #[inline]
+    fn bitxor_assign(&mut self, rhs: Self) {
+        *self = *self ^ rhs
+    }
+}
+
+impl core::ops::Not for Integer4 {
+    type Output = Self;
+    /// Element-wise bit `NOT` operation of two vectors. (assign)
+    #[inline]
+    fn not(self) -> Self::Output {
+        Self {
+            x: !self.x, 
+            y: !self.y, 
+            z: !self.z, 
+            w: !self.w 
+        }
+    }
+}

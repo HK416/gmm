@@ -1,8 +1,8 @@
 use core::fmt;
 use core::ops;
 use core::arch::aarch64::*;
-use super::Vector;
 use crate::{
+    Vector, 
     Integer2, Integer3, Integer4, 
     UInteger2, UInteger3, UInteger4, 
 };
@@ -10,6 +10,8 @@ use crate::{
 
 
 /// This is a vector data type that uses the `SIMD` instruction.
+/// 
+/// Using the `scalar-math` feature disables the use of `SIMD` instructions.
 /// 
 /// It is recommended not to use this data type as a member of a structure.
 /// 
