@@ -13,7 +13,7 @@ use crate::{ Vector, Float3x3, Float4x4 };
 /// 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
-pub struct Matrix([float32x4_t; 4]);
+pub struct Matrix(pub(crate) [float32x4_t; 4]);
 
 impl Matrix {
     /// Transpose of a matrix.

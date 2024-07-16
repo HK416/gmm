@@ -1,6 +1,5 @@
 use core::fmt;
 use core::ops;
-use std::mem;
 use crate::{ 
     Vector, Boolean4, 
     Integer2, Integer3, Integer4, 
