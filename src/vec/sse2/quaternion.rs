@@ -7,7 +7,10 @@ use core::arch::x86::*;
 #[cfg(target_pointer_width = "64")]
 use core::arch::x86_64::*;
 
-use crate::{ Vector, VectorInt, Float4 };
+use crate::{ 
+    Matrix, Vector, VectorInt, 
+    Float3, Float4, Float4x4 
+};
 
 
 

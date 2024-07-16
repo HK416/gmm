@@ -12,10 +12,10 @@
 //! - `x86`, `x86_64` - Supports SIMD operations using `sse2`.
 //! 
 
-#[cfg(any(feature = "scalar-math", not(any(target_feature = "neon", target_feature = "ssec2"))))]
+#[cfg(any(feature = "scalar-math", not(any(target_feature = "neon", target_feature = "sse2"))))]
 mod scalar;
 
-#[cfg(any(feature = "scalar-math", not(any(target_feature = "neon", target_feature = "ssec2"))))]
+#[cfg(any(feature = "scalar-math", not(any(target_feature = "neon", target_feature = "sse2"))))]
 pub use self::scalar::*;
 
 #[cfg(all(target_feature = "neon", not(feature = "scalar-math")))] 
