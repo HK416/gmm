@@ -1,6 +1,9 @@
 use core::fmt;
 use core::ops;
-use crate::{ Vector, Float3x3, Float4, Float4x4 };
+use crate::{ 
+    Vector, Quaternion, 
+    Float3, Float3x3, Float4, Float4x4 
+};
 
 
 
@@ -13,6 +16,341 @@ use crate::{ Vector, Float3x3, Float4, Float4x4 };
 #[repr(transparent)]
 #[derive(Clone, Copy)]
 pub struct Matrix(pub(crate) Float4x4);
+
+impl Matrix {
+    /// Create a matrix with the given `translation`.
+    #[inline]
+    #[must_use]
+    pub fn from_translation(translation: Vector) -> Self {
+        let v: Float3 = translation.into();
+        Float4x4 {
+            w_axis: Float4 { x: v.x, y: v.y, z: v.z, w: 1.0 }, 
+            ..Default::default()
+        }.into()
+    }
+
+    /// Creates a matrix with the given `rotation` and `translation`.
+    /// 
+    /// ※ The given `rotation` must be normalized.
+    /// 
+    /// # Panics
+    /// If use-assertion is enabled 
+    /// and the given quaternion is not a normalized quaternion, it will call [`panic!`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn from_rotation_translation(
+        rotation: Quaternion, 
+        translation: Vector
+    ) -> Self {
+        let (x_axis, y_axis, z_axis) = rotation.to_rotation_axes();
+        let x: Float3 = x_axis.into();
+        let y: Float3 = y_axis.into();
+        let z: Float3 = z_axis.into();
+        let v: Float3 = translation.into();
+        Float4x4 {
+            x_axis: Float4 { x: x.x, y: x.y, z: x.z, w: 0.0 }, 
+            y_axis: Float4 { x: y.x, y: y.y, z: y.z, w: 0.0 }, 
+            z_axis: Float4 { x: z.x, y: z.y, z: z.z, w: 0.0 }, 
+            w_axis: Float4 { x: v.x, y: v.y, z: v.z, w: 1.0 }
+        }.into()
+    }
+
+    /// Creates a matrix with the given `scale`, `rotation` and `translation`.
+    /// 
+    /// ※ The given `rotation` must be normalized.
+    /// 
+    /// # Panics
+    /// If use-assertion is enabled 
+    /// and the given quaternion is not a normalized quaternion, it will call [`panic!`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn from_scale_rotation_translation(
+        scale: Vector, 
+        rotation: Quaternion, 
+        translation: Vector
+    ) -> Self {
+        let (x_axis, y_axis, z_axis) = rotation.to_rotation_axes();
+        let s: Float3 = scale.into();
+        let x: Float3 = (x_axis).into();
+        let y: Float3 = (y_axis).into();
+        let z: Float3 = (z_axis).into();
+        let v: Float3 = translation.into();
+        Float4x4 {
+            x_axis: Float4 { x: x.x * s.x, y: x.y * s.x, z: x.z * s.x, w: 0.0 }, 
+            y_axis: Float4 { x: y.x * s.y, y: y.y * s.y, z: y.z * s.y, w: 0.0 }, 
+            z_axis: Float4 { x: z.x * s.z, y: z.y * s.z, z: z.z * s.z, w: 0.0 }, 
+            w_axis: Float4 { x: v.x, y: v.y, z: v.z, w: 1.0 }
+        }.into()
+    }
+    
+    /// Creates a matrix rotated by a given x-axis angle.
+    /// 
+    /// ※ The angles given are in radians.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn from_rotation_x(angle: f32) -> Self {
+        let (s, c) = angle.sin_cos();
+        let y_axis = Float4 { x: 0.0, y: c, z: s, w: 0.0 };
+        let z_axis = Float4 { x: 0.0, y: -s, z: c, w: 0.0 };
+        Float4x4 { y_axis, z_axis, ..Default::default() }.into()
+    }
+
+    /// Creates a matrix rotated by a given y-axis angle.
+    /// 
+    /// ※ The angles given are in radians.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn from_rotation_y(angle: f32) -> Self {
+        let (s, c) = angle.sin_cos();
+        let x_axis = Float4 { x: c, y: 0.0, z: -s, w: 0.0 };
+        let z_axis = Float4 { x: s, y: 0.0, z: c, w: 0.0 };
+        Float4x4 { x_axis, z_axis, ..Default::default() }.into()
+    }
+
+    /// Creates a matrix rotated by a given z-axis angle.
+    /// 
+    /// ※ The angles given are in radians.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn from_rotation_z(angle: f32) -> Self {
+        let (s, c) = angle.sin_cos();
+        let x_axis = Float4 { x: c, y: s, z: 0.0,  w: 0.0 };
+        let y_axis = Float4 { x: -s, y: c, z: 0.0, w: 0.0 };
+        Float4x4 { x_axis, y_axis, ..Default::default() }.into()
+    }
+
+    /// Create a right-handed coordinate view matrix with the given `eye`, `dir`, and `up`.
+    /// 
+    /// ※ The given `dir` and `up` must be unit vectors.
+    /// 
+    /// # Panics
+    /// If `use-assertion` is enabled
+    /// and the given `dir` and `up` is not unit vectors, it will call [`panic!`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn look_to_rh(eye: Vector, dir: Vector, up: Vector) -> Self {
+        #[cfg(feature = "use-assertion")] {
+            let validate = dir.is_vec3_normalized()
+            & up.is_vec3_normalized();
+            assert!(validate, "The given 'dir' and 'up' must be unit vectors!");
+        }
+
+        let look = dir;
+        let right = look.vec3_cross(up);
+        let up = right.vec3_cross(look);
+
+        let pos_x: Float4 = eye.vec3_dot(right).into();
+        let pos_y: Float4 = eye.vec3_dot(up).into();
+        let pos_z: Float4 = eye.vec3_dot(look).into();
+        
+        let look: Float4 = look.into();
+        let right: Float4 = right.into();
+        let up: Float4 = up.into();
+
+        Float4x4 {
+            x_axis: Float4 { x: right.x, y: up.x, z: -look.x, w: 0.0 }, 
+            y_axis: Float4 { x: right.y, y: up.y, z: -look.y, w: 0.0 }, 
+            z_axis: Float4 { x: right.z, y: up.z, z: -look.z, w: 0.0 }, 
+            w_axis: Float4 { x: -pos_x.x, y: -pos_y.x, z: pos_z.x, w: 1.0 } 
+        }.into()
+    }
+
+    /// Create a left-handed coordinate view matrix with the given `eye`, `dir`, and `up`.
+    /// 
+    /// ※ The given `dir` and `up` must be unit vectors.
+    /// 
+    /// # Panics
+    /// If `use-assertion` is enabled
+    /// and the given `dir` and `up` is not unit vectors, it will call [`panic!`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn look_to_lh(eye: Vector, dir: Vector, up: Vector) -> Self {
+        Self::look_to_rh(eye, -dir, up)
+    }
+
+    /// Create a right-handed coordinate view matrix with the given `eye`, `at`, and `up`.
+    /// 
+    /// ※ The given position of `eye` and `at` must be different.
+    /// 
+    /// # Panics 
+    /// If `use-assertion` is enabled
+    /// and the given `eye` and `at` is are the same, it will call [`panic!`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn look_at_rh(eye: Vector, at: Vector, up: Vector) -> Self {
+        Self::look_to_rh(eye, at - eye, up)
+    }
+
+    /// Create a left-handed coordinate view matrix with the given `eye`, `at`, and `up`.
+    /// 
+    /// ※ The given position of `eye` and `at` must be different.
+    /// 
+    /// # Panics
+    /// If `use-assertion` is enabled
+    /// and the given `eye` and `at` is are the same, it will call [`panic!`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn look_at_lh(eye: Vector, at: Vector, up: Vector) -> Self {
+        Self::look_to_lh(eye, at - eye, up)
+    }
+
+    /// Create a right-handed coordinate perspective projection matrix
+    /// with the given `fov_y`, `aspect_ratio`, `z_near`, `z_far`.
+    /// 
+    /// ※ The depth of the created frustum ranges from `0.0` to `1.0`. </br>
+    /// ※ The given `fov_y` is in radians. </br>
+    /// ※ The given value of `z_near` and `z_far` must be different.
+    /// 
+    /// # Panics
+    /// If `use-assertion` is enabled
+    /// and the given `z_near` and `z_far` is are same, it will call [`panic!`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn perspective_rh(fov_y: f32, aspect_ratio: f32, z_near: f32, z_far: f32) -> Self {
+        #[cfg(feature = "use-assertion")] {
+            let invalidate = (z_far - z_near).abs() <= f32::EPSILON;
+            assert!(!invalidate, "The given value of 'z_near' and 'z_far' must be different!");
+        }
+
+        let (s, c) = (0.5 * fov_y).sin_cos();
+        let h = c / s;
+        let w = h / aspect_ratio;
+        let r = z_far / (z_near - z_far);
+        Float4x4 {
+            x_axis: Float4 { x: w, y: 0.0, z: 0.0, w: 0.0 }, 
+            y_axis: Float4 { x: 0.0, y: h, z: 0.0, w: 0.0 }, 
+            z_axis: Float4 { x: 0.0, y: 0.0, z: r, w: -1.0 }, 
+            w_axis: Float4 { x: 0.0, y: 0.0, z: r * z_near, w: 0.0 }
+        }.into()
+    }
+
+    /// Create a left-handed coordinate perspective projection matrix
+    /// with the given `fov_y`, `aspect_ratio`, `z_near`, `z_far`.
+    /// 
+    /// ※ The depth of the created frustum ranges from `0.0` to `1.0`. </br>
+    /// ※ The given `fov_y` is in radians. </br>
+    /// ※ The given value of `z_near` and `z_far` must be different.
+    /// 
+    /// # Panics
+    /// If use-assertion is enabled 
+    /// and the given z_near and z_far is are same, it will call [`panic!`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn perspective_lh(fov_y: f32, aspect_ratio: f32, z_near: f32, z_far: f32) -> Self {
+        #[cfg(feature = "use-assertion")] {
+            let invalidate = (z_far - z_near).abs() <= f32::EPSILON;
+            assert!(!invalidate, "The given value of 'z_near' and 'z_far' must be different!");
+        }
+
+        let (s, c) = (0.5 * fov_y).sin_cos();
+        let h = c / s;
+        let w = h / aspect_ratio;
+        let r = z_far / (z_far - z_near);
+        Float4x4 {
+            x_axis: Float4 { x: w, y: 0.0, z: 0.0, w: 0.0 }, 
+            y_axis: Float4 { x: 0.0, y: h, z: 0.0, w: 0.0 }, 
+            z_axis: Float4 { x: 0.0, y: 0.0, z: r, w: 1.0 }, 
+            w_axis: Float4 { x: 0.0, y: 0.0, z: -r * z_near, w: 0.0 }
+        }.into()
+    }
+
+    /// Create a right-handed coordinate orthographic projection matrix
+    /// with the given `left`, `right`, `bottom`, `top`, `near`, `far`.
+    /// 
+    /// ※ The depth of the created frustum ranges from `0.0` to `1.0`. </br>
+    /// ※ The given value of `left` and `right` must be different. </br>
+    /// ※ The given value of `bottom` and `top` must be different. </br>
+    /// ※ The given value of `near` and `far` must be different. </br>
+    /// 
+    /// # Panics
+    /// If use-assertion is enabled 
+    /// and given 'left' and 'right' are equal, 
+    /// 'bottom' and 'top' are equal, or 'near' and 'far' are equal, 
+    /// a [`panic!`] is called.
+    /// 
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn orthographic_rh(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Self {
+        #[cfg(feature = "use-assertion")] {
+            let invalidate = (left - right).abs() <= f32::EPSILON;
+            assert!(!invalidate, "The given value of 'left' and 'right' must be different!");
+            let invalidate = (bottom - top).abs() <= f32::EPSILON;
+            assert!(!invalidate, "The given value of 'bottom' and 'top' must be different!");
+            let invalidate = (near - far).abs() <= f32::EPSILON;
+            assert!(!invalidate, "The given value of 'near' and 'far' must be different!");
+        }
+
+        let recip_width = 1.0 / (right - left);
+        let recip_height = 1.0 / (top - bottom);
+        let recip_depth = 1.0 / (near - far);
+        Float4x4 {
+            x_axis: Float4 { x: 2.0 * recip_width, y: 0.0, z: 0.0, w: 0.0 }, 
+            y_axis: Float4 { x: 0.0, y: 2.0 * recip_height, z: 0.0, w: 0.0 }, 
+            z_axis: Float4 { x: 0.0, y: 0.0, z: recip_depth, w: 0.0 }, 
+            w_axis: Float4 { 
+                x: -(left + right) * recip_width, 
+                y: -(bottom + top) * recip_height, 
+                z: near * recip_depth, 
+                w: 1.0 
+            }
+        }.into()
+    }
+
+    /// Create a left-handed coordinate orthographic projection matrix
+    /// with the given `left`, `right`, `bottom`, `top`, `near`, `far`.
+    /// 
+    /// ※ The depth of the created frustum ranges from `0.0` to `1.0`. </br>
+    /// ※ The given value of `left` and `right` must be different. </br>
+    /// ※ The given value of `bottom` and `top` must be different. </br>
+    /// ※ The given value of `near` and `far` must be different. </br>
+    /// 
+    /// # Panics
+    /// If use-assertion is enabled 
+    /// and given 'left' and 'right' are equal, 
+    /// 'bottom' and 'top' are equal, or 'near' and 'far' are equal, 
+    /// a [`panic!`] is called.
+    /// 
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn orthographic_lh(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Self {
+        #[cfg(feature = "use-assertion")] {
+            let invalidate = (left - right).abs() <= f32::EPSILON;
+            assert!(!invalidate, "The given value of 'left' and 'right' must be different!");
+            let invalidate = (bottom - top).abs() <= f32::EPSILON;
+            assert!(!invalidate, "The given value of 'bottom' and 'top' must be different!");
+            let invalidate = (near - far).abs() <= f32::EPSILON;
+            assert!(!invalidate, "The given value of 'near' and 'far' must be different!");
+        }
+
+        let recip_width = 1.0 / (right - left);
+        let recip_height = 1.0 / (top - bottom);
+        let recip_depth = 1.0 / (far - near);
+        Float4x4 {
+            x_axis: Float4 { x: 2.0 * recip_width, y: 0.0, z: 0.0, w: 0.0 }, 
+            y_axis: Float4 { x: 0.0, y: 2.0 * recip_height, z: 0.0, w: 0.0 }, 
+            z_axis: Float4 { x: 0.0, y: 0.0, z: recip_depth, w: 0.0 }, 
+            w_axis: Float4 { 
+                x: -(left + right) * recip_width, 
+                y: -(bottom + top) * recip_height, 
+                z: -near * recip_depth, 
+                w: 1.0 
+            }
+        }.into()
+    }
+}
 
 impl Matrix {
     /// Transpose of a matrix.

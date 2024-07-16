@@ -148,7 +148,7 @@ impl Quaternion {
     /// If `use-assertion` is enabled
     /// and the given quaternion is not a normalized quaternion, it will call [`panic!`].
     /// 
-    fn to_rotation_axes(self) -> (Vector, Vector, Vector) {
+    pub fn to_rotation_axes(self) -> (Vector, Vector, Vector) {
         #[cfg(feature = "use-assertion")]
         assert!(self.is_normalize(), "The quaternion must be normalized!");
 
