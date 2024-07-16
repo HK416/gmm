@@ -60,6 +60,12 @@ impl Quaternion {
         self.len_sq().sqrt()
     }
 
+    /// Returns `true` if it is a unit vector.
+    #[inline]
+    pub fn is_normalize(self) -> bool {
+        (self.len_sq() - 1.0).abs() <= f32::EPSILON 
+    }
+    
     /// Normalizes a quaternion.
     /// If normalization fails, `None`is returned.
     #[inline]

@@ -221,6 +221,12 @@ impl Vector {
         self.vec4_len_sq().sqrt()
     }
 
+    /// Returns `true` if it is a unit vector.
+    #[inline]
+    pub fn is_vec2_normalized(self) -> bool {
+        (self.vec2_len_sq() - 1.0).abs() <= f32::EPSILON
+    }
+
     /// Normalizes a two-element vector.
     /// If normalization fails, `None` is returned.
     #[inline]
@@ -237,6 +243,12 @@ impl Vector {
         }
     }
 
+    /// Returns `true` if it is a unit vector.
+    #[inline]
+    pub fn is_vec3_normalized(self) -> bool {
+        (self.vec3_len_sq() - 1.0).abs() <= f32::EPSILON
+    }
+    
     /// Normalizes a three-element vector.
     /// If normalization fails, `None` is returned.
     #[inline]
@@ -251,6 +263,12 @@ impl Vector {
             },
             true => None,
         }
+    }
+
+    /// Returns `true` if it is a unit vector.
+    #[inline]
+    pub fn is_vec4_normalized(self) -> bool {
+        (self.vec4_len_sq() - 1.0).abs() <= f32::EPSILON
     }
 
     /// Normalizes a four-element vector.
