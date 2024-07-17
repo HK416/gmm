@@ -1,5 +1,5 @@
-#[cfg(features = "bytemuck")]
+#[cfg(feature = "bytemuck")]
 pub mod impl_bytemuck;
 
-#[cfg(features = "mint")]
+#[cfg(feature = "mint")]
 pub mod impl_mint;
