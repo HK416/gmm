@@ -7,6 +7,7 @@ use super::int4::Integer4;
 
 /// A structure that stores two-dimensional integer data.
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Integer2 {
     pub x: i32,

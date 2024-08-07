@@ -7,6 +7,7 @@ use super::int3::Integer3;
 
 /// A structure that stores four-dimensional integer data.
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Integer4 {
     pub x: i32,

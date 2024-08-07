@@ -7,6 +7,7 @@ use super::bool3::Boolean3;
 
 /// A structure that stores four-dimensional boolean data.
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Boolean4 {
     pub x: bool,

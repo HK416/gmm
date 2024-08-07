@@ -6,6 +6,7 @@ use super::uint4::UInteger4;
 
 /// A structure that stores two-dimensional unsigned integer data.
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct UInteger2 {
     pub x: u32,

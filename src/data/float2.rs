@@ -10,6 +10,7 @@ use super::float4::Float4;
 
 /// A structure that stores two-dimensional vector data.
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, PartialEq)]
 pub struct Float2 {
     pub x: f32,

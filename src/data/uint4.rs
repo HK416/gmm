@@ -8,6 +8,7 @@ use super::uint3::UInteger3;
 
 /// A structure that stores four-dimensional unsigned integer data.
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct UInteger4 {
     pub x: u32,

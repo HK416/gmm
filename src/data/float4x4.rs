@@ -9,6 +9,7 @@ use super::float4::Float4;
 
 /// A structure that stores 4x4 column major matrix data.
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, PartialEq)]
 pub struct Float4x4 {
     pub x_axis: Float4,

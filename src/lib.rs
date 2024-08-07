@@ -38,6 +38,7 @@
 //! 
 //! ### Compile Features
 //! - `bytemuck` - Enables the bytemuck library implementation.
+//! - `serde` - Enables the serde library implementation.
 //! - `mint` - Enables the mint library implementation.
 //! - `scalar-math` - Disable the simd instruction in the library.
 //! - `use-assertion` - Allow panic calls within a function.

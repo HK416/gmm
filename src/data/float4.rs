@@ -8,6 +8,7 @@ use super::float3::Float3;
 
 /// A structure that stores four-dimensional vector data.
 #[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, PartialEq)]
 pub struct Float4 {
     pub x: f32,
