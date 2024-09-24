@@ -1,34 +1,155 @@
 use core::fmt;
 use core::ops;
 use core::arch::aarch64::*;
-
-use crate::{ 
-    Vector, Quaternion, 
-    Float3, Float3x3, Float4, Float4x4 
-};
+use crate::{ Vector, Quaternion, Float3x3, Float4x4 };
 
 
 
 /// This is a matrix data type that uses the `SIMD` instruction.
 /// 
-/// Using the `scalar-math` feature disables the use of `SIMD` instructions.
+/// Using the `arm neon` instruction.
 /// 
-/// It is recommended not to use this data types as a member of a structure.
-/// 
-#[repr(transparent)]
+#[repr(C)]
 #[derive(Clone, Copy)]
-pub struct Matrix(pub(crate) [float32x4_t; 4]);
+pub union Matrix {
+    /// member variables for constant variables.
+    arr: [f32; 16], 
+
+    pub(crate) columns: [Vector; 4], 
+
+    pub(crate) inner: float32x4x4_t, 
+}
 
 impl Matrix {
+    /// All elements are zeros.
+    pub const ZERO: Self = Self { arr: [0.0; 16] };
+
+    /// Identity matrix.
+    pub const IDENTITY: Self = Self { 
+        arr: [
+            1.0, 0.0, 0.0, 0.0, 
+            0.0, 1.0, 0.0, 0.0, 
+            0.0, 0.0, 1.0, 0.0, 
+            0.0, 0.0, 0.0, 1.0
+        ] 
+    };
+}
+
+impl Matrix {
+    /// Creates with given elements.
+    #[inline]
+    #[must_use]
+    pub fn new(
+        m00: f32, m01: f32, m02: f32, m03: f32, 
+        m10: f32, m11: f32, m12: f32, m13: f32, 
+        m20: f32, m21: f32, m22: f32, m23: f32, 
+        m30: f32, m31: f32, m32: f32, m33: f32
+    ) -> Self {
+        Self::from_columns(
+            Vector::new(m00, m01, m02, m03), 
+            Vector::new(m10, m11, m12, m13), 
+            Vector::new(m20, m21, m22, m23), 
+            Vector::new(m30, m31, m32, m33)
+        )
+    }
+
+    /// Creates a diagonal matrix.
+    #[inline]
+    #[must_use]
+    pub fn diagonal(diagonal: Vector) -> Self {
+        Self::new(
+            diagonal.get_x(), 0.0, 0.0, 0.0, 
+            0.0, diagonal.get_y(), 0.0, 0.0, 
+            0.0, 0.0, diagonal.get_z(), 0.0, 
+            0.0, 0.0, 0.0, diagonal.get_w()
+        )
+    }
+
+    /// Creates with given column vectors.
+    #[inline]
+    #[must_use]
+    pub const fn from_columns(
+        x_axis: Vector, 
+        y_axis: Vector, 
+        z_axis: Vector, 
+        w_axis: Vector
+) -> Self {
+        Self { columns: [x_axis, y_axis, z_axis, w_axis] }
+    }
+
+    /// Creates from a given array.
+    #[inline]
+    #[must_use]
+    pub fn from_column_array(arr: [f32; 16]) -> Self {
+        unsafe { Self { inner: vld1q_f32_x4(arr.as_ptr()) } }
+    }
+
+    /// Stores the value in an array.
+    #[inline]
+    #[must_use]
+    pub fn into_column_array(self) -> [f32; 16] {
+        let mut arr = [0.0; 16];
+        unsafe { vst1q_f32_x4(arr.as_mut_ptr(), self.inner) };
+        return arr;
+    }
+
+    /// Creates from a given array of slice.
+    /// 
+    /// # Panics
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the array slice has less than sixteen elements.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn from_column_slice(slice: &[f32]) -> Self {
+        #[cfg(feature = "use-assertion")]
+        assert!(slice.len() >= 16, "The given array slice has less than sixteen elements!");
+        unsafe { Self { inner: vld1q_f32_x4(slice.as_ptr()) } }
+    }
+
+    /// Loads a value from a given `Float4x4`.
+    #[inline]
+    #[must_use]
+    pub fn load_float3x3(val: Float3x3) -> Self {
+        Self::from_columns(
+            Vector::load_float3(val.x_axis), 
+            Vector::load_float3(val.x_axis), 
+            Vector::load_float3(val.x_axis), 
+            Vector::W
+        )
+    }
+
+    /// Stores the value in a `Float4x4`.
+    #[inline]
+    #[must_use]
+    pub fn store_float3x3(self) -> Float3x3 {
+        Float3x3 {
+            x_axis: unsafe { self.columns[0].store_float3() }, 
+            y_axis: unsafe { self.columns[1].store_float3() }, 
+            z_axis: unsafe { self.columns[2].store_float3() }, 
+        }
+    }
+
+    /// Loads a value from a given `Float4x4`.
+    #[inline]
+    #[must_use]
+    pub fn load_float4x4(val: Float4x4) -> Self {
+        Self::from_column_array(val.to_column_array())
+    }
+
+    /// Stores the value in a `Float4x4`.
+    #[inline]
+    #[must_use]
+    pub fn store_float4x4(self) -> Float4x4 {
+        Float4x4::from_column_array(self.into_column_array())
+    }
+
     /// Create a matrix with the given `translation`.
     #[inline]
     #[must_use]
-    pub fn from_translation(translation: Vector) -> Self {
-        let v: Float3 = translation.into();
-        Float4x4 {
-            w_axis: Float4 { x: v.x, y: v.y, z: v.z, w: 1.0 }, 
-            ..Default::default()
-        }.into()
+    pub fn from_translation(mut translation: Vector) -> Self {
+        translation.set_w(1.0);
+        Self::from_columns(Vector::X, Vector::Y, Vector::Z, translation)
     }
 
     /// Creates a matrix with the given `rotation` and `translation`.
@@ -36,26 +157,18 @@ impl Matrix {
     /// ※ The given `rotation` must be normalized.
     /// 
     /// # Panics
-    /// If use-assertion is enabled 
-    /// and the given quaternion is not a normalized quaternion, it will call [`panic!`].
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the given quaternion is not a normalized quaternion.
     /// 
     #[inline]
     #[must_use]
     pub fn from_rotation_translation(
         rotation: Quaternion, 
-        translation: Vector
+        mut translation: Vector
     ) -> Self {
+        translation.set_w(1.0);
         let (x_axis, y_axis, z_axis) = rotation.to_rotation_axes();
-        let x: Float3 = x_axis.into();
-        let y: Float3 = y_axis.into();
-        let z: Float3 = z_axis.into();
-        let v: Float3 = translation.into();
-        Float4x4 {
-            x_axis: Float4 { x: x.x, y: x.y, z: x.z, w: 0.0 }, 
-            y_axis: Float4 { x: y.x, y: y.y, z: y.z, w: 0.0 }, 
-            z_axis: Float4 { x: z.x, y: z.y, z: z.z, w: 0.0 }, 
-            w_axis: Float4 { x: v.x, y: v.y, z: v.z, w: 1.0 }
-        }.into()
+        Self::from_columns(x_axis, y_axis, z_axis, translation)
     }
 
     /// Creates a matrix with the given `scale`, `rotation` and `translation`.
@@ -63,28 +176,24 @@ impl Matrix {
     /// ※ The given `rotation` must be normalized.
     /// 
     /// # Panics
-    /// If use-assertion is enabled 
-    /// and the given quaternion is not a normalized quaternion, it will call [`panic!`].
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the given quaternion is not a normalized quaternion.
     /// 
     #[inline]
     #[must_use]
     pub fn from_scale_rotation_translation(
         scale: Vector, 
         rotation: Quaternion, 
-        translation: Vector
+        mut translation: Vector
     ) -> Self {
+        translation.set_w(1.0);
         let (x_axis, y_axis, z_axis) = rotation.to_rotation_axes();
-        let s: Float3 = scale.into();
-        let x: Float3 = (x_axis).into();
-        let y: Float3 = (y_axis).into();
-        let z: Float3 = (z_axis).into();
-        let v: Float3 = translation.into();
-        Float4x4 {
-            x_axis: Float4 { x: x.x * s.x, y: x.y * s.x, z: x.z * s.x, w: 0.0 }, 
-            y_axis: Float4 { x: y.x * s.y, y: y.y * s.y, z: y.z * s.y, w: 0.0 }, 
-            z_axis: Float4 { x: z.x * s.z, y: z.y * s.z, z: z.z * s.z, w: 0.0 }, 
-            w_axis: Float4 { x: v.x, y: v.y, z: v.z, w: 1.0 }
-        }.into()
+        Self::from_columns(
+            x_axis * scale.get_x(), 
+            y_axis * scale.get_y(), 
+            z_axis * scale.get_z(), 
+            translation
+        )
     }
     
     /// Creates a matrix rotated by a given x-axis angle.
@@ -95,9 +204,12 @@ impl Matrix {
     #[must_use]
     pub fn from_rotation_x(angle: f32) -> Self {
         let (s, c) = angle.sin_cos();
-        let y_axis = Float4 { x: 0.0, y: c, z: s, w: 0.0 };
-        let z_axis = Float4 { x: 0.0, y: -s, z: c, w: 0.0 };
-        Float4x4 { y_axis, z_axis, ..Default::default() }.into()
+        Self::from_columns(
+            Vector::X, 
+            Vector::new(0.0, c, s, 0.0), 
+            Vector::new(0.0, -s, c, 0.0), 
+            Vector::W
+        )
     }
 
     /// Creates a matrix rotated by a given y-axis angle.
@@ -108,9 +220,12 @@ impl Matrix {
     #[must_use]
     pub fn from_rotation_y(angle: f32) -> Self {
         let (s, c) = angle.sin_cos();
-        let x_axis = Float4 { x: c, y: 0.0, z: -s, w: 0.0 };
-        let z_axis = Float4 { x: s, y: 0.0, z: c, w: 0.0 };
-        Float4x4 { x_axis, z_axis, ..Default::default() }.into()
+        Self::from_columns(
+            Vector::new(c, 0.0, -s, 0.0), 
+            Vector::Y, 
+            Vector::new(s, 0.0, c, 0.0), 
+            Vector::W
+        )
     }
 
     /// Creates a matrix rotated by a given z-axis angle.
@@ -121,9 +236,12 @@ impl Matrix {
     #[must_use]
     pub fn from_rotation_z(angle: f32) -> Self {
         let (s, c) = angle.sin_cos();
-        let x_axis = Float4 { x: c, y: s, z: 0.0,  w: 0.0 };
-        let y_axis = Float4 { x: -s, y: c, z: 0.0, w: 0.0 };
-        Float4x4 { x_axis, y_axis, ..Default::default() }.into()
+        Self::from_columns(
+            Vector::new(c, s, 0.0, 0.0), 
+            Vector::new(-s, c, 0.0, 0.0), 
+            Vector::Z, 
+            Vector::W
+        )
     }
 
     /// Create a right-handed coordinate view matrix with the given `eye`, `dir`, and `up`.
@@ -131,36 +249,32 @@ impl Matrix {
     /// ※ The given `dir` and `up` must be unit vectors.
     /// 
     /// # Panics
-    /// If `use-assertion` is enabled
-    /// and the given `dir` and `up` is not unit vectors, it will call [`panic!`].
+    /// 
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the given `dir` and `up` is not unit vectors.
     /// 
     #[inline]
     #[must_use]
     pub fn look_to_rh(eye: Vector, dir: Vector, up: Vector) -> Self {
         #[cfg(feature = "use-assertion")] {
-            let validate = dir.is_vec3_normalized()
-            & up.is_vec3_normalized();
-            assert!(validate, "The given 'dir' and 'up' must be unit vectors!");
+            assert!(dir.is_vec3_normalized(), "The given `dir` must be unit vector!");
+            assert!(up.is_vec3_normalized(), "The given `up` must be unit vector!");
         }
 
-        let look = dir;
-        let right = look.vec3_cross(up);
-        let up = right.vec3_cross(look);
+        let mut look = dir;
+        let mut right = look.vec3_cross(up);
+        let mut up = right.vec3_cross(look);
 
-        let pos_x: Float4 = eye.vec3_dot(right).into();
-        let pos_y: Float4 = eye.vec3_dot(up).into();
-        let pos_z: Float4 = eye.vec3_dot(look).into();
-        
-        let look: Float4 = look.into();
-        let right: Float4 = right.into();
-        let up: Float4 = up.into();
+        let pos_x = eye.vec3_dot_into(right);
+        let pos_y = eye.vec3_dot_into(up);
+        let pos_z = eye.vec3_dot_into(look);
 
-        Float4x4 {
-            x_axis: Float4 { x: right.x, y: up.x, z: -look.x, w: 0.0 }, 
-            y_axis: Float4 { x: right.y, y: up.y, z: -look.y, w: 0.0 }, 
-            z_axis: Float4 { x: right.z, y: up.z, z: -look.z, w: 0.0 }, 
-            w_axis: Float4 { x: -pos_x.x, y: -pos_y.x, z: pos_z.x, w: 1.0 } 
-        }.into()
+        right.set_w(-pos_x);
+        up.set_w(-pos_y);
+        look.set_w(-pos_z);
+
+        Self::from_columns(right, up, -look, Vector::W)
+            .transpose()
     }
 
     /// Create a left-handed coordinate view matrix with the given `eye`, `dir`, and `up`.
@@ -168,8 +282,8 @@ impl Matrix {
     /// ※ The given `dir` and `up` must be unit vectors.
     /// 
     /// # Panics
-    /// If `use-assertion` is enabled
-    /// and the given `dir` and `up` is not unit vectors, it will call [`panic!`].
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the given `dir` and `up` is not unit vectors.
     /// 
     #[inline]
     #[must_use]
@@ -182,8 +296,8 @@ impl Matrix {
     /// ※ The given position of `eye` and `at` must be different.
     /// 
     /// # Panics 
-    /// If `use-assertion` is enabled
-    /// and the given `eye` and `at` is are the same, it will call [`panic!`].
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the given `eye` and `at` are equal.
     /// 
     #[inline]
     #[must_use]
@@ -195,9 +309,9 @@ impl Matrix {
     /// 
     /// ※ The given position of `eye` and `at` must be different.
     /// 
-    /// # Panics
-    /// If `use-assertion` is enabled
-    /// and the given `eye` and `at` is are the same, it will call [`panic!`].
+    /// # Panics 
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the given `eye` and `at` are equal.
     /// 
     #[inline]
     #[must_use]
@@ -213,8 +327,8 @@ impl Matrix {
     /// ※ The given value of `z_near` and `z_far` must be different.
     /// 
     /// # Panics
-    /// If `use-assertion` is enabled
-    /// and the given `z_near` and `z_far` is are same, it will call [`panic!`].
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the given `z_near` and `z_far` are equal.
     /// 
     #[inline]
     #[must_use]
@@ -228,12 +342,12 @@ impl Matrix {
         let h = c / s;
         let w = h / aspect_ratio;
         let r = z_far / (z_near - z_far);
-        Float4x4 {
-            x_axis: Float4 { x: w, y: 0.0, z: 0.0, w: 0.0 }, 
-            y_axis: Float4 { x: 0.0, y: h, z: 0.0, w: 0.0 }, 
-            z_axis: Float4 { x: 0.0, y: 0.0, z: r, w: -1.0 }, 
-            w_axis: Float4 { x: 0.0, y: 0.0, z: r * z_near, w: 0.0 }
-        }.into()
+        Self::new(
+            w, 0.0, 0.0, 0.0, 
+            0.0, h, 0.0, 0.0, 
+            0.0, 0.0, r, -1.0, 
+            0.0, 0.0, r * z_near, 0.0
+        )
     }
 
     /// Create a left-handed coordinate perspective projection matrix
@@ -244,8 +358,8 @@ impl Matrix {
     /// ※ The given value of `z_near` and `z_far` must be different.
     /// 
     /// # Panics
-    /// If use-assertion is enabled 
-    /// and the given z_near and z_far is are same, it will call [`panic!`].
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the given `z_near` and `z_far` are equal.
     /// 
     #[inline]
     #[must_use]
@@ -259,12 +373,12 @@ impl Matrix {
         let h = c / s;
         let w = h / aspect_ratio;
         let r = z_far / (z_far - z_near);
-        Float4x4 {
-            x_axis: Float4 { x: w, y: 0.0, z: 0.0, w: 0.0 }, 
-            y_axis: Float4 { x: 0.0, y: h, z: 0.0, w: 0.0 }, 
-            z_axis: Float4 { x: 0.0, y: 0.0, z: r, w: 1.0 }, 
-            w_axis: Float4 { x: 0.0, y: 0.0, z: -r * z_near, w: 0.0 }
-        }.into()
+        Self::new(
+            w, 0.0, 0.0, 0.0, 
+            0.0, h, 0.0, 0.0, 
+            0.0, 0.0, r, 1.0, 
+            0.0, 0.0, -r * z_near, 0.0
+        )
     }
 
     /// Create a right-handed coordinate orthographic projection matrix
@@ -276,11 +390,10 @@ impl Matrix {
     /// ※ The given value of `near` and `far` must be different. </br>
     /// 
     /// # Panics
-    /// If use-assertion is enabled 
-    /// and given 'left' and 'right' are equal, 
-    /// 'bottom' and 'top' are equal, or 'near' and 'far' are equal, 
-    /// a [`panic!`] is called.
-    /// 
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the given `left` and `right` are equal 
+    /// or `bottom` and `top` are equal
+    /// or `near` and `far` are equal.
     /// 
     #[inline]
     #[must_use]
@@ -297,17 +410,15 @@ impl Matrix {
         let recip_width = 1.0 / (right - left);
         let recip_height = 1.0 / (top - bottom);
         let recip_depth = 1.0 / (near - far);
-        Float4x4 {
-            x_axis: Float4 { x: 2.0 * recip_width, y: 0.0, z: 0.0, w: 0.0 }, 
-            y_axis: Float4 { x: 0.0, y: 2.0 * recip_height, z: 0.0, w: 0.0 }, 
-            z_axis: Float4 { x: 0.0, y: 0.0, z: recip_depth, w: 0.0 }, 
-            w_axis: Float4 { 
-                x: -(left + right) * recip_width, 
-                y: -(bottom + top) * recip_height, 
-                z: near * recip_depth, 
-                w: 1.0 
-            }
-        }.into()
+        Self::new(
+            2.0 * recip_width, 0.0, 0.0, 0.0, 
+            0.0, 2.0 * recip_height, 0.0, 0.0, 
+            0.0, 0.0, recip_depth, 0.0, 
+            -(left + right) * recip_width, 
+            -(bottom + top) * recip_height, 
+            near * recip_depth, 
+            1.0
+        )
     }
 
     /// Create a left-handed coordinate orthographic projection matrix
@@ -319,11 +430,10 @@ impl Matrix {
     /// ※ The given value of `near` and `far` must be different. </br>
     /// 
     /// # Panics
-    /// If use-assertion is enabled 
-    /// and given 'left' and 'right' are equal, 
-    /// 'bottom' and 'top' are equal, or 'near' and 'far' are equal, 
-    /// a [`panic!`] is called.
-    /// 
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the given `left` and `right` are equal 
+    /// or `bottom` and `top` are equal
+    /// or `near` and `far` are equal.
     /// 
     #[inline]
     #[must_use]
@@ -340,22 +450,77 @@ impl Matrix {
         let recip_width = 1.0 / (right - left);
         let recip_height = 1.0 / (top - bottom);
         let recip_depth = 1.0 / (far - near);
-        Float4x4 {
-            x_axis: Float4 { x: 2.0 * recip_width, y: 0.0, z: 0.0, w: 0.0 }, 
-            y_axis: Float4 { x: 0.0, y: 2.0 * recip_height, z: 0.0, w: 0.0 }, 
-            z_axis: Float4 { x: 0.0, y: 0.0, z: recip_depth, w: 0.0 }, 
-            w_axis: Float4 { 
-                x: -(left + right) * recip_width, 
-                y: -(bottom + top) * recip_height, 
-                z: -near * recip_depth, 
-                w: 1.0 
-            }
-        }.into()
+        Self::new(
+            2.0 * recip_width, 0.0, 0.0, 0.0, 
+            0.0, 2.0 * recip_height, 0.0, 0.0, 
+            0.0, 0.0, recip_depth, 0.0, 
+            -(left + right) * recip_width, 
+            -(bottom + top) * recip_height, 
+            -near * recip_depth, 
+            1.0
+        )
     }
 }
 
 impl Matrix {
+    /// Get the x-axis of a matrix.
+    #[inline]
+    #[must_use]
+    pub fn get_x_axis(&self) -> &Vector {
+        unsafe { self.columns.get_unchecked(0) }
+    }
+
+    /// Set the x-axis of a matrix.
+    #[inline]
+    #[must_use]
+    pub fn set_x_axis(&mut self, v: Vector) {
+        unsafe { *self.columns.get_unchecked_mut(0) = v }
+    }
+
+    /// Get the y-axis of a matrix.
+    #[inline]
+    #[must_use]
+    pub fn get_y_axis(&self) -> &Vector {
+        unsafe { self.columns.get_unchecked(1) }
+    }
+
+    /// Set the y-axis of a matrix.
+    #[inline]
+    #[must_use]
+    pub fn set_y_axis(&mut self, v: Vector) {
+        unsafe { *self.columns.get_unchecked_mut(1) = v }
+    }
+
+    /// Get the z-axis of a matrix.
+    #[inline]
+    #[must_use]
+    pub fn get_z_axis(&self) -> &Vector {
+        unsafe { self.columns.get_unchecked(2) }
+    }
+
+    /// Set the z-axis of a matrix.
+    #[inline]
+    #[must_use]
+    pub fn set_z_axis(&mut self, v: Vector) {
+        unsafe { *self.columns.get_unchecked_mut(2) = v }
+    }
+
+    /// Get the w-axis of a matrix.
+    #[inline]
+    #[must_use]
+    pub fn get_w_axis(&self) -> &Vector {
+        unsafe { self.columns.get_unchecked(3) }
+    }
+
+    /// Set the x-axis of a matrix.
+    #[inline]
+    #[must_use]
+    pub fn set_w_axis(&mut self, v: Vector) {
+        unsafe { *self.columns.get_unchecked_mut(3) = v }
+    }
+
     /// Transpose of a matrix.
+    #[must_use]
     pub fn transpose(self) -> Self {
         // Origin:
         // m00 m01 m02 m03 
@@ -364,8 +529,8 @@ impl Matrix {
         // m30 m31 m32 m33
         // 
         unsafe {
-            let tran_r0r1 = vtrnq_f32(self[0], self[1]);
-            let tran_r2r3 = vtrnq_f32(self[2], self[3]);
+            let tran_r0r1 = vtrnq_f32(self.inner.0, self.inner.1);
+            let tran_r2r3 = vtrnq_f32(self.inner.2, self.inner.3);
             let m00_m10_m02_m12 = tran_r0r1.0;
             let m01_m11_m03_m13 = tran_r0r1.1;
             let m20_m30_m22_m32 = tran_r2r3.0;
@@ -387,23 +552,24 @@ impl Matrix {
             let m23_m33 = vget_high_f32(m21_m31_m23_m33);
             let m03_m13_m23_m33 = vcombine_f32(m03_m13, m23_m33);
 
-            Matrix([
-                m00_m10_m20_m30, 
-                m01_m11_m21_m31, 
-                m02_m12_m22_m32, 
-                m03_m13_m23_m33 
-            ])
+            Self::from_columns(
+                Vector { inner: m00_m10_m20_m30 }, 
+                Vector { inner: m01_m11_m21_m31 }, 
+                Vector { inner: m02_m12_m22_m32 }, 
+                Vector { inner: m03_m13_m23_m33 }
+            )
         }
     }
 
     /// Determinant of a matrix.
+    #[must_use]
     pub fn determinant(self) -> Vector {
         // Reference: glm/detail/func_matrix.inl
         const ONE_NEG_ONE_NEG: [f32; 4] = [1.0, -1.0, 1.0, -1.0];
         const NEG_ONE_NEG_ONE: [f32; 4] = [-1.0, 1.0, -1.0, 1.0];
         unsafe {
-            let m00_m01 = vget_low_f32(self[0]);
-            let m02_m03 = vget_high_f32(self[0]);
+            let m00_m01 = vget_low_f32(self.inner.0);
+            let m02_m03 = vget_high_f32(self.inner.0);
             let m01_m00 = vext_f32::<0b01>(m00_m01, m00_m01);
             let m03_m02 = vext_f32::<0b01>(m02_m03, m02_m03);
             let m00_m00 = vext_f32::<0b01>(m01_m00, m00_m01);
@@ -411,8 +577,8 @@ impl Matrix {
             let m02_m02 = vext_f32::<0b01>(m03_m02, m02_m03);
             let m03_m03 = vext_f32::<0b01>(m02_m03, m03_m02);
 
-            let m10_m11 = vget_low_f32(self[1]);
-            let m12_m13 = vget_high_f32(self[1]);
+            let m10_m11 = vget_low_f32(self.inner.1);
+            let m12_m13 = vget_high_f32(self.inner.1);
             let m11_m10 = vext_f32::<0b01>(m10_m11, m10_m11);
             let m13_m12 = vext_f32::<0b01>(m12_m13, m12_m13);
             let m10_m10 = vext_f32::<0b01>(m11_m10, m10_m11);
@@ -420,8 +586,8 @@ impl Matrix {
             let m12_m12 = vext_f32::<0b01>(m13_m12, m12_m13);
             let m13_m13 = vext_f32::<0b01>(m12_m13, m13_m12);
 
-            let m20_m21 = vget_low_f32(self[2]);
-            let m22_m23 = vget_high_f32(self[2]);
+            let m20_m21 = vget_low_f32(self.inner.2);
+            let m22_m23 = vget_high_f32(self.inner.2);
             let m21_m20 = vext_f32::<0b01>(m20_m21, m20_m21);
             let m23_m22 = vext_f32::<0b01>(m22_m23, m22_m23);
             let m20_m20 = vext_f32::<0b01>(m21_m20, m20_m21);
@@ -429,8 +595,8 @@ impl Matrix {
             let m22_m22 = vext_f32::<0b01>(m23_m22, m22_m23);
             let m23_m23 = vext_f32::<0b01>(m22_m23, m23_m22);
 
-            let m30_m31 = vget_low_f32(self[3]);
-            let m32_m33 = vget_high_f32(self[3]);
+            let m30_m31 = vget_low_f32(self.inner.3);
+            let m32_m33 = vget_high_f32(self.inner.3);
             let m31_m30 = vext_f32::<0b01>(m30_m31, m30_m31);
             let m33_m32 = vext_f32::<0b01>(m32_m33, m32_m33);
             let m30_m30 = vext_f32::<0b01>(m31_m30, m30_m31);
@@ -504,23 +670,31 @@ impl Matrix {
             let inv00_inv10 = vget_low_f32(vtrnq_f32(inverse[0], inverse[1]).0); 
             let inv20_inv30 = vget_low_f32(vtrnq_f32(inverse[2], inverse[3]).0);
             let row0 = vcombine_f32(inv00_inv10, inv20_inv30);
-            let det = vmulq_f32(self[0], row0);
-            let det = vpaddq_f32(det, det);
-            let det = vpaddq_f32(det, det);
-            
-            return Vector(det);
+            Vector { inner: vmulq_f32(self.inner.0, row0) }.sum()
         }
     }
 
+    /// Determinant of a matrix.
+    #[inline]
+    #[must_use]
+    pub fn determinant_into(self) -> f32 {
+        self.determinant().get_x()
+    }
+
     /// Inverse of a matrix.
-    /// If the inverse of matrix cannot be calculated, returns `None`.
-    pub fn inverse(self) -> Option<Self> {
+    /// 
+    /// # Panics
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the determinant of a matrix is less than or equal to [`f32::EPSILON`].
+    /// 
+    #[must_use]
+    pub fn inverse(self) -> Self {
         // Reference: glm/detail/func_matrix.inl
         const ONE_NEG_ONE_NEG: [f32; 4] = [1.0, -1.0, 1.0, -1.0];
         const NEG_ONE_NEG_ONE: [f32; 4] = [-1.0, 1.0, -1.0, 1.0];
         unsafe {
-            let m00_m01 = vget_low_f32(self[0]);
-            let m02_m03 = vget_high_f32(self[0]);
+            let m00_m01 = vget_low_f32(self.inner.0);
+            let m02_m03 = vget_high_f32(self.inner.0);
             let m01_m00 = vext_f32::<0b01>(m00_m01, m00_m01);
             let m03_m02 = vext_f32::<0b01>(m02_m03, m02_m03);
             let m00_m00 = vext_f32::<0b01>(m01_m00, m00_m01);
@@ -528,8 +702,8 @@ impl Matrix {
             let m02_m02 = vext_f32::<0b01>(m03_m02, m02_m03);
             let m03_m03 = vext_f32::<0b01>(m02_m03, m03_m02);
 
-            let m10_m11 = vget_low_f32(self[1]);
-            let m12_m13 = vget_high_f32(self[1]);
+            let m10_m11 = vget_low_f32(self.inner.1);
+            let m12_m13 = vget_high_f32(self.inner.1);
             let m11_m10 = vext_f32::<0b01>(m10_m11, m10_m11);
             let m13_m12 = vext_f32::<0b01>(m12_m13, m12_m13);
             let m10_m10 = vext_f32::<0b01>(m11_m10, m10_m11);
@@ -537,8 +711,8 @@ impl Matrix {
             let m12_m12 = vext_f32::<0b01>(m13_m12, m12_m13);
             let m13_m13 = vext_f32::<0b01>(m12_m13, m13_m12);
 
-            let m20_m21 = vget_low_f32(self[2]);
-            let m22_m23 = vget_high_f32(self[2]);
+            let m20_m21 = vget_low_f32(self.inner.2);
+            let m22_m23 = vget_high_f32(self.inner.2);
             let m21_m20 = vext_f32::<0b01>(m20_m21, m20_m21);
             let m23_m22 = vext_f32::<0b01>(m22_m23, m22_m23);
             let m20_m20 = vext_f32::<0b01>(m21_m20, m20_m21);
@@ -546,8 +720,8 @@ impl Matrix {
             let m22_m22 = vext_f32::<0b01>(m23_m22, m22_m23);
             let m23_m23 = vext_f32::<0b01>(m22_m23, m23_m22);
 
-            let m30_m31 = vget_low_f32(self[3]);
-            let m32_m33 = vget_high_f32(self[3]);
+            let m30_m31 = vget_low_f32(self.inner.3);
+            let m32_m33 = vget_high_f32(self.inner.3);
             let m31_m30 = vext_f32::<0b01>(m30_m31, m30_m31);
             let m33_m32 = vext_f32::<0b01>(m32_m33, m32_m33);
             let m30_m30 = vext_f32::<0b01>(m31_m30, m30_m31);
@@ -621,37 +795,38 @@ impl Matrix {
             let inv00_inv10 = vget_low_f32(vtrnq_f32(inverse[0], inverse[1]).0); 
             let inv20_inv30 = vget_low_f32(vtrnq_f32(inverse[2], inverse[3]).0);
             let row0 = vcombine_f32(inv00_inv10, inv20_inv30);
-            let det = vmulq_f32(self[0], row0);
+            let det = vmulq_f32(self.inner.0, row0);
             let det = vpaddq_f32(det, det);
             let det = vpaddq_f32(det, det);
             let det = vgetq_lane_f32::<0b00>(det);
-            if det.abs() <= f32::EPSILON {
-                return None;
-            }
 
             let recip_det = det.recip();
-            Some(Matrix([
-                vmulq_n_f32(inverse[0], recip_det), 
-                vmulq_n_f32(inverse[1], recip_det), 
-                vmulq_n_f32(inverse[2], recip_det), 
-                vmulq_n_f32(inverse[3], recip_det)
-            ]))
+            Self::from_columns(
+                Vector { inner: vmulq_n_f32(inverse[0], recip_det) }, 
+                Vector { inner: vmulq_n_f32(inverse[1], recip_det) }, 
+                Vector { inner: vmulq_n_f32(inverse[2], recip_det) }, 
+                Vector { inner: vmulq_n_f32(inverse[3], recip_det) } 
+            )
         }
     }
-}
 
-impl From<[f32; 16]> for Matrix {
-    #[inline]
-    fn from(value: [f32; 16]) -> Self {
-        Self::from(Float4x4::from(value))
+    /// Inverse of a matrix.
+    /// 
+    /// Returns `None` if the determinant of a matrix is less than or equal to [`f32::EPSILON`].
+    /// 
+    pub fn try_inverse(self) -> Option<Self> {
+        let det = self.determinant_into();
+        if det <= f32::EPSILON {
+            return None;
+        }
+        Some(self * det.recip())
     }
 }
 
-impl Into<[f32; 16]> for Matrix {
+impl Default for Matrix {
     #[inline]
-    fn into(self) -> [f32; 16] {
-        let value: Float4x4 = self.into();
-        value.into()
+    fn default() -> Self {
+        Self::IDENTITY
     }
 }
 
@@ -665,51 +840,35 @@ impl From<Float3x3> for Matrix {
 impl Into<Float3x3> for Matrix {
     #[inline]
     fn into(self) -> Float3x3 {
-        let value: Float4x4 = self.into();
-        return value.into();
+        self.store_float3x3()
     }
 }
 
 impl From<Float4x4> for Matrix {
     #[inline]
     fn from(value: Float4x4) -> Self {
-        unsafe { 
-            Matrix([
-                vld1q_f32(&value[0] as *const _ as *const f32), 
-                vld1q_f32(&value[1] as *const _ as *const f32), 
-                vld1q_f32(&value[2] as *const _ as *const f32), 
-                vld1q_f32(&value[3] as *const _ as *const f32) 
-            ])
-        }
+        Self::load_float4x4(value)
     }
 }
 
 impl Into<Float4x4> for Matrix {
     #[inline]
     fn into(self) -> Float4x4 {
-        let mut value = Float4x4::default();
-        unsafe {
-            vst1q_f32(&mut value[0] as *mut _ as *mut f32, self[0]);
-            vst1q_f32(&mut value[1] as *mut _ as *mut f32, self[1]);
-            vst1q_f32(&mut value[2] as *mut _ as *mut f32, self[2]);
-            vst1q_f32(&mut value[3] as *mut _ as *mut f32, self[3]);
-        }
-        return value;
+        self.store_float4x4()
     }
 }
 
-impl ops::Deref for Matrix {
-    type Target = [float32x4_t; 4];
+impl From<[f32; 16]> for Matrix {
     #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    fn from(value: [f32; 16]) -> Self {
+        Self::from_column_array(value)
     }
 }
 
-impl ops::DerefMut for Matrix {
+impl Into<[f32; 16]> for Matrix {
     #[inline]
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+    fn into(self) -> [f32; 16] {
+        self.into_column_array()
     }
 }
 
@@ -718,13 +877,13 @@ impl ops::Add<Self> for Matrix {
     /// Adds two matrices.
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
-        unsafe { 
-            Matrix([
-                vaddq_f32(self[0], rhs[0]), 
-                vaddq_f32(self[1], rhs[1]), 
-                vaddq_f32(self[2], rhs[2]), 
-                vaddq_f32(self[3], rhs[3])
-            ])
+        Self {
+            columns: [
+                unsafe { self.columns[0] + rhs.columns[0] }, 
+                unsafe { self.columns[1] + rhs.columns[1] }, 
+                unsafe { self.columns[2] + rhs.columns[2] }, 
+                unsafe { self.columns[3] + rhs.columns[3] } 
+            ]
         }
     }
 }
@@ -742,13 +901,13 @@ impl ops::Sub<Self> for Matrix {
     /// Subtracts two matrices.
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
-        unsafe {
-            Matrix([
-                vsubq_f32(self[0], rhs[0]), 
-                vsubq_f32(self[1], rhs[1]), 
-                vsubq_f32(self[2], rhs[2]), 
-                vsubq_f32(self[3], rhs[3]) 
-            ])
+        Self {
+            columns: [
+                unsafe { self.columns[0] - rhs.columns[0] }, 
+                unsafe { self.columns[1] - rhs.columns[1] }, 
+                unsafe { self.columns[2] - rhs.columns[2] }, 
+                unsafe { self.columns[3] - rhs.columns[3] } 
+            ]
         }
     }
 }
@@ -766,13 +925,45 @@ impl ops::Neg for Matrix {
     /// Nagative.
     #[inline]
     fn neg(self) -> Self::Output {
-        unsafe {
-            Matrix([
-                vnegq_f32(self[0]), 
-                vnegq_f32(self[1]), 
-                vnegq_f32(self[2]), 
-                vnegq_f32(self[3])
-            ])
+        Self {
+            columns: [
+                unsafe { -self.columns[0] }, 
+                unsafe { -self.columns[1] }, 
+                unsafe { -self.columns[2] }, 
+                unsafe { -self.columns[3] } 
+            ]
+        }
+    }
+}
+
+impl ops::Mul<Matrix> for f32 {
+    type Output = Matrix;
+    /// Multiplies each element of a matrix by a scalar value.
+    #[inline]
+    fn mul(self, rhs: Matrix) -> Self::Output {
+        Matrix {
+            columns: [
+                unsafe { self * rhs.columns[0] }, 
+                unsafe { self * rhs.columns[1] }, 
+                unsafe { self * rhs.columns[2] }, 
+                unsafe { self * rhs.columns[3] } 
+            ]
+        }
+    }
+}
+
+impl ops::Mul<f32> for Matrix {
+    type Output = Self;
+    /// Multiplies each element of a matrix by a scalar value.
+    #[inline]
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self {
+            columns: [
+                unsafe { self.columns[0] * rhs }, 
+                unsafe { self.columns[1] * rhs }, 
+                unsafe { self.columns[2] * rhs }, 
+                unsafe { self.columns[3] * rhs } 
+            ]
         }
     }
 }
@@ -784,19 +975,19 @@ impl ops::Mul<Vector> for Matrix {
         unsafe {
             let rows = self.transpose();
 
-            let e0 = vmulq_f32(rows[0], *rhs);
+            let e0 = vmulq_f32(rows.inner.0, rhs.inner);
             let e0 = vpaddq_f32(e0, e0);
             let e0 = vpaddq_f32(e0, e0);
 
-            let e1 = vmulq_f32(rows[1], *rhs);
+            let e1 = vmulq_f32(rows.inner.1, rhs.inner);
             let e1 = vpaddq_f32(e1, e1);
             let e1 = vpaddq_f32(e1, e1);
 
-            let e2 = vmulq_f32(rows[2], *rhs);
+            let e2 = vmulq_f32(rows.inner.2, rhs.inner);
             let e2 = vpaddq_f32(e2, e2);
             let e2 = vpaddq_f32(e2, e2);
 
-            let e3 = vmulq_f32(rows[3], *rhs);
+            let e3 = vmulq_f32(rows.inner.3, rhs.inner);
             let e3 = vpaddq_f32(e3, e3);
             let e3 = vpaddq_f32(e3, e3);
 
@@ -804,7 +995,7 @@ impl ops::Mul<Vector> for Matrix {
             let tran1 = vtrn1q_f32(e2, e3);
             let col0 = vextq_f32::<0b10>(tran0, tran1);
 
-            return Vector(col0);
+            return Vector{ inner: col0 };
         }
     }
 }
@@ -816,90 +1007,90 @@ impl ops::Mul<Self> for Matrix {
         unsafe {
             let rows = self.transpose();
 
-            let e0 = vmulq_f32(rows[0], rhs[0]);
+            let e0 = vmulq_f32(rows.inner.0, rhs.inner.0);
             let e0 = vpaddq_f32(e0, e0);
             let e0 = vpaddq_f32(e0, e0);
 
-            let e1 = vmulq_f32(rows[1], rhs[0]);
+            let e1 = vmulq_f32(rows.inner.1, rhs.inner.0);
             let e1 = vpaddq_f32(e1, e1);
             let e1 = vpaddq_f32(e1, e1);
 
-            let e2 = vmulq_f32(rows[2], rhs[0]);
+            let e2 = vmulq_f32(rows.inner.2, rhs.inner.0);
             let e2 = vpaddq_f32(e2, e2);
             let e2 = vpaddq_f32(e2, e2);
 
-            let e3 = vmulq_f32(rows[3], rhs[0]);
+            let e3 = vmulq_f32(rows.inner.3, rhs.inner.0);
             let e3 = vpaddq_f32(e3, e3);
             let e3 = vpaddq_f32(e3, e3);
 
             let tran0 = vtrn1q_f32(e0, e1);
             let tran1 = vtrn1q_f32(e2, e3);
-            let col0 = vextq_f32::<0b10>(tran0, tran1);
+            let col0 = Vector { inner: vextq_f32::<0b10>(tran0, tran1) };
 
 
-            let e0 = vmulq_f32(rows[0], rhs[1]);
+            let e0 = vmulq_f32(rows.inner.0, rhs.inner.1);
             let e0 = vpaddq_f32(e0, e0);
             let e0 = vpaddq_f32(e0, e0);
 
-            let e1 = vmulq_f32(rows[1], rhs[1]);
+            let e1 = vmulq_f32(rows.inner.1, rhs.inner.1);
             let e1 = vpaddq_f32(e1, e1);
             let e1 = vpaddq_f32(e1, e1);
 
-            let e2 = vmulq_f32(rows[2], rhs[1]);
+            let e2 = vmulq_f32(rows.inner.2, rhs.inner.1);
             let e2 = vpaddq_f32(e2, e2);
             let e2 = vpaddq_f32(e2, e2);
 
-            let e3 = vmulq_f32(rows[3], rhs[1]);
+            let e3 = vmulq_f32(rows.inner.3, rhs.inner.1);
             let e3 = vpaddq_f32(e3, e3);
             let e3 = vpaddq_f32(e3, e3);
 
             let tran0 = vtrn1q_f32(e0, e1);
             let tran1 = vtrn1q_f32(e2, e3);
-            let col1 = vextq_f32::<0b10>(tran0, tran1);
+            let col1 = Vector { inner: vextq_f32::<0b10>(tran0, tran1) };
 
 
-            let e0 = vmulq_f32(rows[0], rhs[2]);
+            let e0 = vmulq_f32(rows.inner.0, rhs.inner.2);
             let e0 = vpaddq_f32(e0, e0);
             let e0 = vpaddq_f32(e0, e0);
 
-            let e1 = vmulq_f32(rows[1], rhs[2]);
+            let e1 = vmulq_f32(rows.inner.1, rhs.inner.2);
             let e1 = vpaddq_f32(e1, e1);
             let e1 = vpaddq_f32(e1, e1);
 
-            let e2 = vmulq_f32(rows[2], rhs[2]);
+            let e2 = vmulq_f32(rows.inner.2, rhs.inner.2);
             let e2 = vpaddq_f32(e2, e2);
             let e2 = vpaddq_f32(e2, e2);
 
-            let e3 = vmulq_f32(rows[3], rhs[2]);
+            let e3 = vmulq_f32(rows.inner.3, rhs.inner.2);
             let e3 = vpaddq_f32(e3, e3);
             let e3 = vpaddq_f32(e3, e3);
 
             let tran0 = vtrn1q_f32(e0, e1);
             let tran1 = vtrn1q_f32(e2, e3);
-            let col2 = vextq_f32::<0b10>(tran0, tran1);
+            let col2 = Vector { inner: vextq_f32::<0b10>(tran0, tran1) };
 
 
-            let e0 = vmulq_f32(rows[0], rhs[3]);
+            let e0 = vmulq_f32(rows.inner.0, rhs.inner.3);
             let e0 = vpaddq_f32(e0, e0);
             let e0 = vpaddq_f32(e0, e0);
 
-            let e1 = vmulq_f32(rows[1], rhs[3]);
+            let e1 = vmulq_f32(rows.inner.1, rhs.inner.3);
             let e1 = vpaddq_f32(e1, e1);
             let e1 = vpaddq_f32(e1, e1);
 
-            let e2 = vmulq_f32(rows[2], rhs[3]);
+            let e2 = vmulq_f32(rows.inner.2, rhs.inner.3);
             let e2 = vpaddq_f32(e2, e2);
             let e2 = vpaddq_f32(e2, e2);
 
-            let e3 = vmulq_f32(rows[3], rhs[3]);
+            let e3 = vmulq_f32(rows.inner.3, rhs.inner.3);
             let e3 = vpaddq_f32(e3, e3);
             let e3 = vpaddq_f32(e3, e3);
 
             let tran0 = vtrn1q_f32(e0, e1);
             let tran1 = vtrn1q_f32(e2, e3);
-            let col3 = vextq_f32::<0b10>(tran0, tran1);
+            let col3 = Vector { inner: vextq_f32::<0b10>(tran0, tran1) };
             
-            return Matrix([col0, col1, col2, col3]);
+            Self::from_columns(col0, col1, col2, col3)
         }
     }
 }
@@ -916,10 +1107,7 @@ impl fmt::Debug for Matrix {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple(stringify!(Matrix))
-            .field(&self[0])
-            .field(&self[1])
-            .field(&self[2])
-            .field(&self[3])
+            .field(unsafe { &self.columns })
             .finish()
     }
 }

@@ -64,23 +64,25 @@ fn quaternion_inverse() {
 
         // Quaternion
         let quat_a: Quaternion = { let t: Float4 = origin.into(); t.into() };
-        let quat_b = quat_a.inverse();
+        let quat_len = quat_a.len();
+        let quat_inv = quat_a.inverse();
 
         // Control group
         let glam_a = glam::Quat::from_array(origin);
-        let glam_b = (glam_a.length() > EPSILON).then(|| glam_a.normalize().inverse());
+        let glam_len = glam_a.length();
+        let glam_inv = glam_a.normalize().inverse();
+
+        assert!((quat_len - glam_len).abs() <= f32::EPSILON, "Length operation on `Quaternion` is invalid! (Quaternion:{:?}, Control Group:{:?}", quat_len, glam_len);
+        if quat_len.abs() <= f32::EPSILON {
+            continue;
+        }
 
         // Compare `Quaternion` and `Control group`
-        if let Some((quat_b, glam_b)) = quat_b.zip(glam_b) {
-            let a: [f32; 4] = { let t: Float4 = quat_b.into(); t.into() };
-            let b: [f32; 4] = glam_b.into();
-            let mut invalidate = false;
-            for idx in 0..4 {
-                invalidate |= (a[idx] - b[idx]).abs() > EPSILON;
-            }
+        let a: [f32; 4] = { let t: Float4 = quat_inv.into(); t.into() };
+        let b: [f32; 4] = glam_inv.into();
+        for idx in 0..4 {
+            let invalidate = (a[idx] - b[idx]).abs() > EPSILON;
             assert!(!invalidate, "Test:{} >> Conjudgate operation on `Quaternion` is invalid! (Quaternion:{:?}, Control group:{:?})", test, a, b);
-        } else {
-            panic!("Test:{} >> Inverse operation on `Quaternion` is invalid! (Quaternion:{:?}, Control group:{:?})", test, quat_b, glam_b);
         }
     }
 }

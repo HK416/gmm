@@ -3,6 +3,7 @@ use crate::{
     Boolean2, Boolean3, Boolean4, 
     Float2, Float3, Float3x3, Float4, Float4x4, 
     Integer2, Integer3, Integer4, UInteger2, UInteger3, UInteger4, 
+    Vector, VectorInt, Quaternion, Matrix
 };
 
 
@@ -53,6 +54,18 @@ unsafe impl Zeroable for UInteger3 {}
 unsafe impl Pod for UInteger4 {}
 unsafe impl Zeroable for UInteger4 {}
 
+unsafe impl Pod for Vector {}
+unsafe impl Zeroable for Vector {}
+
+unsafe impl Pod for VectorInt {}
+unsafe impl Zeroable for VectorInt {}
+
+unsafe impl Pod for Quaternion {}
+unsafe impl Zeroable for Quaternion {}
+
+unsafe impl Pod for Matrix {}
+unsafe impl Zeroable for Matrix {}
+
 // TODO: Add test function...
 #[cfg(test)]
 mod tests {
@@ -60,7 +73,9 @@ mod tests {
     use crate::{
         Boolean2, Boolean3, Boolean4, 
         Float2, Float3, Float3x3, Float4, Float4x4, 
-        Integer2, Integer3, Integer4, UInteger2, UInteger3, UInteger4
+        Integer2, Integer3, Integer4, 
+        UInteger2, UInteger3, UInteger4, 
+        Matrix, Quaternion, Vector, VectorInt
     };
 
     macro_rules! test_pod_impl {
@@ -96,4 +111,9 @@ mod tests {
     test_pod_impl!(impl_bytemuck_uinteger2, UInteger2);
     test_pod_impl!(impl_bytemuck_uinteger3, UInteger3);
     test_pod_impl!(impl_bytemuck_uinteger4, UInteger4);
+
+    test_pod_impl!(impl_bytemuck_vector, Vector);
+    test_pod_impl!(impl_bytemuck_vector_int, VectorInt);
+    test_pod_impl!(impl_bytemuck_quaternion, Quaternion);
+    test_pod_impl!(impl_bytemuck_matrix, Matrix);
 }

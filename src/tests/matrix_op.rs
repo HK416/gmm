@@ -138,26 +138,25 @@ fn matrix4x4_inverse() {
 
         // Matrix
         let matrix_a: Matrix = { let t: Float4x4 = origin.into(); t.into() };
+        let matrix_det = matrix_a.determinant_into();
         let matrix_inv = matrix_a.inverse();
 
         // Control group
         let glam_a = glam::Mat4::from_cols_array(&origin);
-        let glam_inv = (glam_a.determinant().abs() > f32::EPSILON).then(|| glam_a.inverse());
+        let glam_det = glam_a.determinant();
+        let glam_inv = glam_a.inverse();
 
         // Compare `Matrix` and `Control group`
-        if matrix_inv.is_none() & glam_inv.is_none() {
+        assert!((matrix_det - glam_det).abs() <= f32::EPSILON, "Determinant operation on `Matrix` is invalid! (Matrix:{:?}, Control group:{:?})", matrix_det, glam_det);
+        if matrix_det.abs() <= f32::EPSILON {
             continue;
         }
 
-        if let Some((matrix_inv, glam_inv)) = matrix_inv.zip(glam_inv) {
-            let a: [f32; 16] = { let t: Float4x4 = matrix_inv.into(); t.into() };
-            let b: [f32; 16] = glam_inv.to_cols_array();
-            for idx in 0..16 {
-                let validate = (a[idx] - b[idx]).abs() <= EPSILON;
-                assert!(validate, "Test:{}-{} >> Inverse operation on `Matrix` is invalid! (Matrix:{:?}, Control group:{:?})", test, idx, a, b);
-            }
-        } else {
-            panic!("Test:{} >> Inverse operation on `Matrix` is invalid! (Matrix:{:?}, Control group:{:?})", test, matrix_inv, glam_inv);
+        let a: [f32; 16] = { let t: Float4x4 = matrix_inv.into(); t.into() };
+        let b: [f32; 16] = glam_inv.to_cols_array();
+        for idx in 0..16 {
+            let validate = (a[idx] - b[idx]).abs() <= EPSILON;
+            assert!(validate, "Test:{}-{} >> Inverse operation on `Matrix` is invalid! (Matrix:{:?}, Control group:{:?})", test, idx, a, b);
         }
     }
 }
