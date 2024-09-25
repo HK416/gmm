@@ -19,14 +19,10 @@ or
 use gmm::Float4;
 use gmm::Vector;
  
-let a = Float4::new(1.0, 2.0, 3.0, 4.0);
-let s = Float4::fill(5.0);
+let a = Vector::new(1.0, 2.0, 3.0, 4.0);
+let s = Vector::fill(5.0);
  
-let v_a: Vector = a.into();
-let v_s: Vector = s.into();
-let v_res = v_a + v_s;
- 
-let res: Float4 = v_res.into();
+let res = a + s;
  
 println!("{} + {} = {}", a, s, res);
 ```
