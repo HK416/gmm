@@ -1,8 +1,8 @@
 [package]
 name = "gmm"
 version = "0.3.0"
+rust-version = "1.59"
 edition = "2021"
-rust-version = "1.76"
 authors = ["HK416 <powerspirit127@gmail.com>"]
 description = "Math library for video games"
 repository = "https://github.com/HK416/gmm"

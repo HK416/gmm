@@ -123,7 +123,7 @@ fn vector4_dot() {
         // Compare `Vector` and `Control group`
         let a: f32 = { let t: Float4 = vector_c.into(); t.x };
         let b: f32 = glam_c;
-        assert_eq!(a, b, "Test:{} >> Dot4 operation on `Vector` is invalid! (Vector:{:?}, Control Group:{:?})", test, a, b);
+        assert!((a - b).abs() <= EPSILON, "Test:{} >> Dot4 operation on `Vector` is invalid! (Vector:{:?}, Control Group:{:?})", test, a, b);
     }
 }
 

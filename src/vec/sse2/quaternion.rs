@@ -7,24 +7,99 @@ use core::arch::x86::*;
 #[cfg(target_pointer_width = "64")]
 use core::arch::x86_64::*;
 
-use crate::{ 
-    Matrix, Vector, VectorInt, 
-    Float3, Float4, Float4x4 
-};
+use crate::{ Matrix, Vector, VectorInt, Float3, Float4 };
 
 
 
 /// This is a quaternion data type that uses the `SIMD` instruction.
 /// 
-/// Using the `scalar-math` feature disables the use of `SIMD` instructions.
+/// Using the `sse2` instruction.
 /// 
-/// It is recommended not to use this data types as a member of a structure.
-/// 
-#[repr(transparent)]
+#[repr(C)]
 #[derive(Clone, Copy)]
-pub struct Quaternion(pub(crate) __m128);
+pub union Quaternion {
+    /// member variables for constant variables.
+    arr: [f32; 4], 
+
+    pub(crate) inner: __m128, 
+}
 
 impl Quaternion {
+    /// All elements are zeros.
+    pub const ZERO: Self = Self { arr: [0.0; 4] };
+
+    /// Identity quaternion.
+    pub const IDENTITY: Self = Self { arr: [0.0, 0.0, 0.0, 1.0] };
+}
+
+impl Quaternion {
+    /// Creates with given elements.
+    #[inline]
+    #[must_use]
+    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
+        unsafe {
+            let arr = [x, y, z, w];
+            Self { inner: _mm_loadu_ps(arr.as_ptr()) }
+        }
+    }
+
+    /// Fills all elements with the given values.
+    #[inline]
+    #[must_use]
+    pub fn fill(v: f32) -> Self {
+        unsafe { Self { inner: _mm_set1_ps(v) } }
+    }
+
+    /// Creates from a given array.
+    #[inline]
+    #[must_use]
+    pub fn from_array(arr: [f32; 4]) -> Self {
+        unsafe { Self { inner: _mm_loadu_ps(arr.as_ptr()) } }
+    }
+
+    /// Stores the value in an array.
+    #[inline]
+    #[must_use]
+    pub fn into_array(self) -> [f32; 4] {
+        let mut arr = [0.0; 4];
+        unsafe { _mm_storeu_ps(arr.as_mut_ptr(), self.inner) };
+        return arr;
+    }
+
+    /// Creates from a given array of slice.
+    /// 
+    /// # Panics
+    /// When the `use-assertion` feature is enabled, it will [`panic!`]
+    /// if the array slice has less than four elements.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn from_slice(slice: &[f32]) -> Self {
+        #[cfg(feature = "use-assertion")]
+        assert!(slice.len() >= 4, "The given array slice has less than four elements!");
+        unsafe { Self { inner: _mm_loadu_ps(slice.as_ptr()) } }
+    }
+
+    /// Loads a value from a given `Float4`.
+    #[inline]
+    #[must_use]
+    pub fn load_float4(val: Float4) -> Self {
+        unsafe {
+            Self { inner: _mm_loadu_ps(&val as *const _ as *const f32) }
+        }
+    }
+
+    /// Stores the value in a `Float4`.
+    #[inline]
+    #[must_use]
+    pub fn store_float4(self) -> Float4 {
+        unsafe {
+            let mut val = Float4::default();
+            _mm_storeu_ps(&mut val as *mut _ as *mut f32, self.inner);
+            val
+        }
+    }
+    
     /// Creates a quaternion rotated by a given x-axis angle.
     /// 
     /// ※ The angles given are in radians.
@@ -33,7 +108,7 @@ impl Quaternion {
     #[must_use]
     pub fn from_rotation_x(angle: f32) -> Self {
         let (s, c) = (0.5 * angle).sin_cos();
-        Float4 { x: s, y: 0.0, z: 0.0, w: c }.into()
+        Self::new(s, 0.0, 0.0, c)
     }
 
     /// Creates a quaternion rotated by a given y-axis angle.
@@ -44,7 +119,7 @@ impl Quaternion {
     #[must_use]
     pub fn from_rotation_y(angle: f32) -> Self {
         let (s, c) = (0.5 * angle).sin_cos();
-        Float4 { x: 0.0, y: s, z: 0.0, w: c }.into()
+        Self::new(0.0, s, 0.0, c)
     }
 
     /// Creates a quaternion rotated by a given z-axis angle.
@@ -55,7 +130,7 @@ impl Quaternion {
     #[must_use]
     pub fn from_rotation_z(angle: f32) -> Self {
         let (s, c) = (0.5 * angle).sin_cos();
-        Float4 { x: 0.0, y: 0.0, z: s, w: c }.into()
+        Self::new(0.0, 0.0, s, c)
     }
 
     /// Creates a quaternion rotated about a given `axis` by a given `angle`.
@@ -64,8 +139,8 @@ impl Quaternion {
     /// ※ The given axis must be a unit vector. </br>
     /// 
     /// # Panics
-    /// If `use-assertion` is enabled
-    /// and the given axis is not a unit vector, it will call [`panic!`].
+    /// When the `use-assertion` feature is enabled, [`panic!`] will be called
+    /// if the given axis is not a unit vector.
     /// 
     #[inline]
     #[must_use]
@@ -74,15 +149,9 @@ impl Quaternion {
         assert!(axis.is_vec3_normalized(), "The given axis must be a unit vector!");
 
         let (s, c) = (0.5 * angle).sin_cos();
-        unsafe {
-            let s = _mm_set1_ps(s);
-            let c = _mm_set1_ps(c);
-            let v = _mm_mul_ps(*axis, s);
-            let xxyy = _mm_shuffle_ps::<0b_01_01_00_00>(v, v);
-            let zzww = _mm_shuffle_ps::<0b_00_00_10_10>(v, c);
-            let v = _mm_shuffle_ps::<0b_10_00_10_00>(xxyy, zzww);
-            return Quaternion(v);
-        }
+        let mut v = axis * s;
+        v.set_w(c);
+        v.into()
     }
 
     /// Create a quaternion from each axis.
@@ -187,16 +256,170 @@ impl Quaternion {
         
         (x_axis, y_axis, z_axis)
     }
+
+    /// Creates from a given matrix.
+    /// 
+    /// # Panics
+    /// When `use-assertion` feature is enabled, [`panic!`] will be called 
+    /// if the length of each axis of the matrix is less than or equal to [`f32::EPSILON`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn from_matrix(matrix: Matrix) -> Quaternion {
+        Self::from_rotation_axes(
+            matrix.get_x_axis().vec3_normalize(), 
+            matrix.get_y_axis().vec3_normalize(), 
+            matrix.get_z_axis().vec3_normalize() 
+        )
+    }
+
+    /// Creates from a given matrix.
+    /// 
+    /// Returns `None` if the length of each axis of the matrix is less than or equal to [`f32::EPSILON`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn try_from_matrix(matrix: Matrix) -> Option<Quaternion> {
+        matrix.get_x_axis().try_vec3_normalize()
+            .map(|x_axis| matrix.get_y_axis().try_vec3_normalize()
+                .map(|y_axis| matrix.get_z_axis().try_vec3_normalize()
+                    .map(|z_axis| Self::from_rotation_axes(x_axis, y_axis, z_axis))
+                ).flatten()
+            ).flatten()
+    }
+
+    /// Stores the value in a matrix.
+    /// 
+    /// # Panics
+    /// When the `use-assertion` feature is enabled, [`panic!`] will be called 
+    /// if the quaternion is not a normalized quaternion.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn into_matrix(self) -> Matrix {
+        let (x_axis, y_axis, z_axis) = self.to_rotation_axes();
+        Matrix::from_columns(x_axis, y_axis, z_axis, Vector::W)
+    }
+
+    /// Stores the value in a matrix.
+    /// 
+    /// Returns `None` if the quaternion is not a normalized quaternion.
+    /// 
+    pub fn try_into_matrix(self) -> Option<Matrix> {
+        if !self.is_normalized() {
+            return None;
+        }
+        Some(self.into_matrix())
+    }
 }
 
 impl Quaternion {
+    /// Get the `x` element of a quaternion.
+    #[inline]
+    #[must_use]
+    pub fn get_x(&self) -> f32 {
+        unsafe { _mm_cvtss_f32(self.inner) }
+    }
+
+    /// Set the `x` element of a quaternion.
+    #[inline]
+    pub fn set_x(&mut self, v: f32) {
+        unsafe {
+            let x = _mm_set_ss(v);
+            self.inner = _mm_move_ss(self.inner, x)
+        }
+    }
+
+    /// Get the `y element of a quaternion.
+    #[inline]
+    #[must_use]
+    pub fn get_y(&self) -> f32 {
+        unsafe { 
+            let temp = _mm_shuffle_ps::<0b_01_01_01_01>(self.inner, self.inner);
+            _mm_cvtss_f32(temp)
+        }
+    }
+
+    /// Set the `y` element of a quaternion.
+    #[inline]
+    pub fn set_y(&mut self, v: f32) {
+        unsafe {
+            let v = _mm_set_ss(v);
+            self.inner = match is_x86_feature_detected!("sse4.1") {
+                true => _mm_insert_ps::<0x10>(self.inner, v), 
+                false => {
+                    let yxzw = _mm_shuffle_ps::<0b_11_10_00_01>(self.inner, self.inner);
+                    let vxzw = _mm_move_ss(yxzw, v);
+                    _mm_shuffle_ps::<0b_11_10_00_01>(vxzw, vxzw)
+                }
+            };
+        }
+    }
+
+    /// Get the `z` element of a quaternion.
+    #[inline]
+    #[must_use]
+    pub fn get_z(&self) -> f32 {
+        unsafe { 
+            let temp = _mm_shuffle_ps::<0b_10_10_10_10>(self.inner, self.inner);
+            _mm_cvtss_f32(temp)
+        }
+    }
+
+    /// Set the `z` element of a quaternion.
+    #[inline]
+    pub fn set_z(&mut self, v: f32) {
+        unsafe {
+            let v = _mm_set_ss(v);
+            self.inner = match is_x86_feature_detected!("sse4.1") {
+                true => _mm_insert_ps::<0x20>(self.inner, v), 
+                false => {
+                    let zwxy = _mm_shuffle_ps::<0b_01_00_11_10>(self.inner, self.inner);
+                    let vwxy = _mm_move_ss(zwxy, v);
+                    _mm_shuffle_ps::<0b_01_00_11_10>(vwxy, vwxy)
+                }
+            }
+        }
+    }
+
+    /// Get the `w` element of a quaternion.
+    #[inline]
+    #[must_use]
+    pub fn get_w(&self) -> f32 {
+        unsafe { 
+            let temp = _mm_shuffle_ps::<0b_11_11_11_11>(self.inner, self.inner);
+            _mm_cvtss_f32(temp)
+        }
+    }
+
+    /// Set the `w` element of a quaternion.
+    #[inline]
+    pub fn set_w(&mut self, v: f32) {
+        unsafe {
+            let v = _mm_set_ss(v);
+            self.inner = match is_x86_feature_detected!("sse4.1") {
+                true => _mm_insert_ps::<0x30>(self.inner, v), 
+                false => {
+                    let wyzx = _mm_shuffle_ps::<0b_00_10_01_11>(self.inner, self.inner);
+                    let vyzx = _mm_move_ss(wyzx, v);
+                    _mm_shuffle_ps::<0b_00_10_01_11>(vyzx, vyzx)
+                }
+            }
+        }
+    }
+
     /// Checks if the elements of two quaternions are eqaul.
     /// 
     /// This function does not use [`f32::EPSILON`].
     /// 
     #[inline]
+    #[must_use]
     pub fn eq(self, rhs: Self) -> VectorInt {
-        Vector(*self).eq(Vector(*rhs))
+        unsafe {
+            let comp = _mm_cmpeq_ps(self.inner, rhs.inner);
+            let cast = _mm_castps_si128(comp);
+            return VectorInt { inner: cast };
+        }
     }
 
     /// Checks if the elements of two quaternions are not eqaul.
@@ -204,166 +427,212 @@ impl Quaternion {
     /// This function does not use [`f32::EPSILON`].
     /// 
     #[inline]
+    #[must_use]
     pub fn ne(self, rhs: Self) -> VectorInt {
         !self.eq(rhs)
     }
-}
 
-impl Quaternion {
-    /// Dot product of two quaternions.
+    /// Returns a vector filled with the dot products of the quaternions.
     #[inline]
+    #[must_use]
     pub fn dot(self, rhs: Self) -> Vector {
-        Vector(*self).vec4_dot(Vector(*rhs))
+        unsafe { 
+            match is_x86_feature_detected!("sse4.1") {
+                true => Vector { inner: _mm_dp_ps(self.inner, rhs.inner, 0xFF) }, 
+                false => (Vector { inner: self.inner } * Vector { inner: rhs.inner }).sum()
+            }
+        }
+    }
+
+    /// Dot product of the quaternions.
+    #[inline]
+    #[must_use]
+    pub fn dot_into(self, rhs: Self) -> f32 {
+        self.dot(rhs).get_x()
     }
 
     /// Length squared of a quaternion.
     #[inline]
+    #[must_use]
     pub fn len_sq(self) -> f32 {
-        Vector(*self).vec4_len_sq()
+        self.dot_into(self)
     }
 
     /// Length of a quaternion.
     #[inline]
+    #[must_use]
     pub fn len(self) -> f32 {
         self.len_sq().sqrt()
     }
 
-    /// Returns `true` if it is a unit vector.
+    /// Returns `true` if it is a normalized quaternion.
     #[inline]
-    pub fn is_normalize(self) -> bool {
-        (self.len_sq() - 1.0).abs() <= f32::EPSILON 
+    #[must_use]
+    pub fn is_normalized(self) -> bool {
+        (self.len() - 1.0).abs() <= f32::EPSILON 
     }
-    
+
     /// Normalizes a quaternion.
-    /// If normalization fails, `None`is returned.
+    /// 
+    /// Undefined behavior may occur if the length of the quaternion is less than or equal to [`f32::EPSILON`].
+    /// 
+    /// # Panics
+    /// When `use-assertion` is enabled, [`panic!`] will be called 
+    /// if the length of the quaternion is less than or equal to [`f32::EPSILON`].
+    /// 
     #[inline]
-    pub fn normalize(self) -> Option<Self> {
-        Vector(*self).vec4_normalize()
-            .map(|norm| Quaternion(*norm))
+    #[must_use]
+    pub fn normalize(self) -> Self {
+        #[cfg(feature = "use-assertion")]
+        assert!(self.len() <= f32::EPSILON, "The length of the vector is less than or equal to `f32::EPSILON`!");
+        self * self.len().recip()
+    }
+
+    /// Normalizes a quaternion. 
+    /// 
+    /// Returns `None` if the length of the quaternion is less than or equal to [`f32::EPSILON`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn try_normalize(self) -> Option<Self> {
+        let length = self.len();
+        if length <= f32::EPSILON {
+            return None;
+        }
+        Some(self * length.recip())
     }
 
     /// Returns the conjugate of the quaternion.
     #[inline]
+    #[must_use]
     pub fn conjugate(self) -> Self {
-        const NEG_NEG_NEG_ONE: [f32; 4] = [-1.0, -1.0, -1.0, 1.0];
-        unsafe {
-            let neg_neg_neg_one = _mm_loadu_ps(&NEG_NEG_NEG_ONE as *const f32);
-            let conjugate = _mm_mul_ps(*self, neg_neg_neg_one);
-            return Quaternion(conjugate);
-        }
+        const MASK: Quaternion = Quaternion { arr: [-1.0, -1.0, -1.0, 1.0] };
+        unsafe { Quaternion { inner: _mm_mul_ps(self.inner, MASK.inner) } }
     }
 
     /// Returns the inverse of the quaternion.
-    /// If normalization fails, `None` is returned.
+    /// 
+    /// Undefined behavior may occur if the length of the quaternion is less than or equal to [`f32::EPSILON`].
+    /// 
+    /// # Panics
+    /// When `use-assertion` feature is enabled, [`panic!`] will be called
+    /// if the length of the quaternion is less than or equal to [`f32::EPSILON`].
+    /// 
     #[inline]
-    pub fn inverse(self) -> Option<Self> {
-        self.normalize().map(|norm| {
-            norm.conjugate()
-        })
+    #[must_use]
+    pub fn inverse(self) -> Self {
+        self.normalize().conjugate()
+    }
+
+    /// Returns the inverse of the quaternion.
+    /// 
+    /// If the quaternion cannot be normalized, `None` is returned.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn try_inverse(self) -> Option<Self> {
+        self.try_normalize().map(|q| q.conjugate())
+    }
+
+    /// Returns a quaternion that is a linear interpolation of two quaternion.
+    /// 
+    /// The given `t` must be in the range zero to one.
+    ///  
+    /// The closer `t` is to one, the more it becomes equal to the given `rhs`.
+    /// 
+    /// # Panics
+    /// When `use-assertion` feature is enabled, [`panic!`] will be called 
+    /// if the quaternion is not normalized.
+    /// 
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn lerp(self, rhs: Self, t: f32) -> Self {
+        self * (1.0 - t) + rhs * t
     }
 }
 
-impl ops::Deref for Quaternion {
-    type Target = __m128;
+impl Default for Quaternion {
     #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl ops::DerefMut for Quaternion {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+    fn default() -> Self {
+        Self::IDENTITY
     }
 }
 
 impl From<[f32; 4]> for Quaternion {
     #[inline]
     fn from(value: [f32; 4]) -> Self {
-        Self::from(Float4::from(value))
+        Self::from_array(value)
     }
 }
 
 impl Into<[f32; 4]> for Quaternion {
     #[inline]
     fn into(self) -> [f32; 4] {
-        let value: Float4 = self.into();
-        value.into()
+        self.into_array()
     }
 }
 
 impl From<Vector> for Quaternion {
     #[inline]
     fn from(value: Vector) -> Self {
-        Quaternion(value.0)
+        Quaternion { inner: unsafe { value.inner } }
     }
 }
 
 impl Into<Vector> for Quaternion {
     #[inline]
     fn into(self) -> Vector {
-        Vector(*self)
-    }
-}
-
-impl TryFrom<Matrix> for Quaternion {
-    type Error = Quaternion;
-
-    /// Convert a matrix to a quaternion.
-    /// 
-    /// # Errors
-    /// If each axis of the matrix cannot be converted to a unit vector, 
-    /// it returns an identity quaternion.
-    /// 
-    fn try_from(value: Matrix) -> Result<Self, Self::Error> {
-        let x_axis = Vector(value[0]).vec3_normalize();
-        let y_axis = Vector(value[1]).vec3_normalize();
-        let z_axis = Vector(value[2]).vec3_normalize();
-        match (x_axis, y_axis, z_axis) {
-            (Some(x_axis), Some(y_axis), Some(z_axis)) => Ok(
-                Self::from_rotation_axes(x_axis, y_axis, z_axis)
-            ), 
-            _ => { Err(Float4::W.into()) }
-        }
-    }
-}
-
-impl TryInto<Matrix> for Quaternion {
-    type Error = Matrix;
-
-    /// Convert a quaternion to a matrix.
-    /// 
-    /// # Errors
-    /// If the quaternion cannot be normalized, 
-    /// it returns an identity matrix.
-    /// 
-    fn try_into(self) -> Result<Matrix, Self::Error> {
-        self.normalize()
-            .map(|quat| {
-                quat.to_rotation_axes()
-            })
-            .map(|(x_axis, y_axis, z_axis)| {
-                let w_axis: Vector = Float4::W.into();
-                Matrix([*x_axis, *y_axis, *z_axis, *w_axis])
-            })
-            .ok_or(Float4x4::IDENTITY.into())
+        Vector { inner: unsafe { self.inner } }
     }
 }
 
 impl From<Float4> for Quaternion {
     #[inline]
     fn from(value: Float4) -> Self {
-        unsafe { Quaternion(_mm_loadu_ps(&value as *const _ as *const f32)) }
+        Self::load_float4(value)
     }
 }
 
 impl Into<Float4> for Quaternion {
     #[inline]
     fn into(self) -> Float4 {
-        let mut value: Float4 = Float4::default();
-        unsafe { _mm_storeu_ps(&mut value as *mut _ as *mut f32, *self) };
-        return value;
+        self.store_float4()
+    }
+}
+
+impl ops::Add<Self> for Quaternion {
+    type Output = Self;
+    /// Element-wise addition of two quaternions.
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        unsafe { Quaternion { inner: _mm_add_ps(self.inner, rhs.inner) } }
+    }
+}
+
+impl ops::AddAssign<Self> for Quaternion {
+    /// Element-wise addition of two quaternions.
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs
+    }
+}
+
+impl ops::Mul<Quaternion> for f32 {
+    type Output = Quaternion;
+    /// Scalar multiplication of a quaternion.
+    #[inline]
+    fn mul(self, rhs: Quaternion) -> Self::Output {
+        unsafe { Quaternion { inner: _mm_mul_ps(rhs.inner, _mm_set1_ps(self)) } }
+    }
+}
+
+impl ops::Mul<f32> for Quaternion {
+    type Output = Self;
+    /// Scalar multiplication of a quaternion.
+    #[inline]
+    fn mul(self, rhs: f32) -> Self::Output {
+        unsafe { Self { inner: _mm_mul_ps(self.inner, _mm_set1_ps(rhs)) } }
     }
 }
 
@@ -381,27 +650,27 @@ impl ops::Mul<Self> for Quaternion {
         // w: aw*bw - ax*bx - ay*by - az*bz
         //
         unsafe {
-            let bx_by_bz_bw = *rhs;
-            let bw_bz_by_bx = _mm_shuffle_ps::<0b_00_01_10_11>(*rhs, *rhs);
-            let bz_bw_bx_by = _mm_shuffle_ps::<0b_01_00_11_10>(*rhs, *rhs);
-            let by_bx_bw_bz = _mm_shuffle_ps::<0b_10_11_00_01>(*rhs, *rhs);
+            let bx_by_bz_bw = rhs.inner;
+            let bw_bz_by_bx = _mm_shuffle_ps::<0b_00_01_10_11>(rhs.inner, rhs.inner);
+            let bz_bw_bx_by = _mm_shuffle_ps::<0b_01_00_11_10>(rhs.inner, rhs.inner);
+            let by_bx_bw_bz = _mm_shuffle_ps::<0b_10_11_00_01>(rhs.inner, rhs.inner);
             
             let one_neg_one_neg = _mm_loadu_ps(&ONE_NEG_ONE_NEG as *const f32);
             let one_one_neg_neg = _mm_loadu_ps(&ONE_ONE_NEG_NEG as *const f32);
             let neg_one_one_neg = _mm_loadu_ps(&NEG_ONE_ONE_NEG as *const f32);
 
-            let aw = _mm_shuffle_ps::<0b_11_11_11_11>(*self, *self);
+            let aw = _mm_shuffle_ps::<0b_11_11_11_11>(self.inner, self.inner);
             let e0 = _mm_mul_ps(aw, bx_by_bz_bw);
 
-            let ax = _mm_shuffle_ps::<0b_00_00_00_00>(*self, *self);
+            let ax = _mm_shuffle_ps::<0b_00_00_00_00>(self.inner, self.inner);
             let e1 = _mm_mul_ps(ax, bw_bz_by_bx);
             let e1 = _mm_mul_ps(e1, one_neg_one_neg);
 
-            let ay = _mm_shuffle_ps::<0b_01_01_01_01>(*self, *self);
+            let ay = _mm_shuffle_ps::<0b_01_01_01_01>(self.inner, self.inner);
             let e2 = _mm_mul_ps(ay, bz_bw_bx_by);
             let e2 = _mm_mul_ps(e2, one_one_neg_neg);
 
-            let az = _mm_shuffle_ps::<0b_10_10_10_10>(*self, *self);
+            let az = _mm_shuffle_ps::<0b_10_10_10_10>(self.inner, self.inner);
             let e3 = _mm_mul_ps(az, by_bx_bw_bz);
             let e3 = _mm_mul_ps(e3, neg_one_one_neg);
 
@@ -409,7 +678,7 @@ impl ops::Mul<Self> for Quaternion {
             result = _mm_add_ps(result, e2);
             result = _mm_add_ps(result, e3);
 
-            return Quaternion(result);
+            return Quaternion { inner: result };
         }
     }
 }
@@ -426,7 +695,7 @@ impl fmt::Debug for Quaternion {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple(stringify!(Quaternion))
-            .field(&*self)
+            .field(unsafe { &self.inner })
             .finish()
     }
 }
