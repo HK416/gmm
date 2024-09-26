@@ -2,7 +2,11 @@
 A math library for video games that allow independent management of data.
 Just like [DirectXMath](https://github.com/microsoft/DirectXMath), data and vectors are divided.
 
-# Examples
+# Design
+### Data Type
+Data types are designed to be used when storing data in files or exchanging it with other systems.
+
+#### Example
 ```rust
 use gmm::Float4;
  
@@ -13,10 +17,12 @@ let res = a + s;
 println!("{} + {} = {}", a, s, res);
 ```
 
-or
+### Vector Type
+Vector types are designed to be used when processing calculations.
+Some systems use `SIMD` instructions.
 
+#### Example
 ```rust
-use gmm::Float4;
 use gmm::Vector;
  
 let a = Vector::new(1.0, 2.0, 3.0, 4.0);
