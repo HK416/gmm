@@ -167,6 +167,50 @@ impl Matrix {
         Float4x4::from_column_array(self.into_column_array())
     }
 
+    /// Creates a matrix from a given quaternion.
+    /// 
+    /// # Panics
+    /// When the `use-assertion` feature is enabled, [`panic!`] will be called 
+    /// if the quaternion is not a normalized quaternion.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn from_quaternion(q: Quaternion) -> Self {
+        q.into_matrix()
+    }
+
+    /// Creates a matrix from a given quaternion.
+    /// 
+    /// If the quaternion is not normalized, `None` is returned.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn try_from_quaternion(q: Quaternion) -> Option<Self> {
+        q.try_into_matrix()
+    }
+
+    /// Converts a matrix to a quaternion.
+    /// 
+    /// # Panics
+    /// When `use-assertion` feature is enabled, [`panic!`] will be called 
+    /// if the length of each axis of the matrix is less than or equal to [`f32::EPSILON`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn into_quaternion(self) -> Quaternion {
+        Quaternion::from_matrix(self)
+    }
+
+    /// Converts a matrix to a quaternion.
+    /// 
+    /// Returns `None` if the length of each axis of the matrix is less than or equal to [`f32::EPSILON`].
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn try_into_quaternion(self) -> Option<Quaternion> {
+        Quaternion::try_from_matrix(self)
+    }
+
     /// Create a matrix with the given `translation`.
     #[inline]
     #[must_use]
@@ -495,7 +539,6 @@ impl Matrix {
 
     /// Set the x-axis of a matrix.
     #[inline]
-    #[must_use]
     pub fn set_x_axis(&mut self, v: Vector) {
         unsafe { *self.columns.get_unchecked_mut(0) = v }
     }
@@ -509,7 +552,6 @@ impl Matrix {
 
     /// Set the y-axis of a matrix.
     #[inline]
-    #[must_use]
     pub fn set_y_axis(&mut self, v: Vector) {
         unsafe { *self.columns.get_unchecked_mut(1) = v }
     }
@@ -523,7 +565,6 @@ impl Matrix {
 
     /// Set the z-axis of a matrix.
     #[inline]
-    #[must_use]
     pub fn set_z_axis(&mut self, v: Vector) {
         unsafe { *self.columns.get_unchecked_mut(2) = v }
     }
@@ -537,7 +578,6 @@ impl Matrix {
 
     /// Set the x-axis of a matrix.
     #[inline]
-    #[must_use]
     pub fn set_w_axis(&mut self, v: Vector) {
         unsafe { *self.columns.get_unchecked_mut(3) = v }
     }
@@ -656,6 +696,7 @@ impl Matrix {
     /// When the `use-assertion` feature is enabled, it will [`panic!`]
     /// if the determinant of a matrix is less than or equal to [`f32::EPSILON`].
     /// 
+    #[must_use]
     pub fn inverse(self) -> Self {
         // Reference: glm/detail/func_matrix.inl
         const ONE_ONE_ONE_ONE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
@@ -750,6 +791,7 @@ impl Matrix {
     /// 
     /// Returns `None` if the determinant of a matrix is less than or equal to [`f32::EPSILON`].
     /// 
+    #[must_use]
     pub fn try_inverse(self) -> Option<Self> {
         let det = self.determinant_into();
         if det <= f32::EPSILON {

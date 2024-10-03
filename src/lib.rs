@@ -14,7 +14,7 @@
 //! let s = Float4::fill(5.0);
 //! let res = a + s;
 //!  
-//! println!("{} + {} = {}", a, s, res);
+//! println!("{:?} + {:?} = {:?}", a, s, res);
 //! ```
 //! 
 //! ### Vector Type
@@ -30,7 +30,7 @@
 //!  
 //! let res = a + s;
 //!  
-//! println!("{} + {} = {}", a, s, res);
+//! println!("{:?} + {:?} = {:?}", a, s, res);
 //! ```
 //! 
 //! 

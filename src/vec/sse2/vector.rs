@@ -7,7 +7,7 @@ use core::arch::x86::*;
 #[cfg(target_pointer_width = "64")]
 use core::arch::x86_64::*;
 
-use crate::{ VectorInt, Float2, Float3, Float4 };
+use crate::{ Quaternion, VectorInt, Float2, Float3, Float4 };
 
 
 
@@ -123,6 +123,20 @@ impl Vector {
         #[cfg(feature = "use-assertion")]
         assert!(slice.len() >= 4, "The given array slice has less than four elements!");
         unsafe { Self { inner: _mm_loadu_ps(slice.as_ptr()) } }
+    }
+
+    /// Converts a given quaternion to a vector.
+    #[inline]
+    #[must_use]
+    pub fn from_quaternion(q: Quaternion) -> Self {
+        Self { inner: unsafe { q.inner } }
+    }
+
+    /// Converts a vector to a quaternion.
+    #[inline]
+    #[must_use]
+    pub fn into_quaternion(self) -> Quaternion {
+        Quaternion { inner: unsafe { self.inner } }
     }
 
     /// Loads a value from a given `Float2`.
@@ -443,7 +457,7 @@ impl Vector {
     }
 
     /// Cross product of two three-element vectors.
-    #[inline]
+    #[must_use]
     pub fn vec3_cross(self, rhs: Self) -> Vector {
         const MASK_XYZ: Vector = Vector { arr: [1.0, 1.0, 1.0, 0.0] };
         unsafe {
@@ -460,42 +474,49 @@ impl Vector {
 
     /// Length squared of a two-element vector.
     #[inline]
+    #[must_use]
     pub fn vec2_len_sq(self) -> f32 {
         self.vec2_dot_into(self)
     }
 
     /// Length of a two-element vector.
     #[inline]
+    #[must_use]
     pub fn vec2_len(self) -> f32 {
         self.vec2_len_sq().sqrt()
     }
 
     /// Length squared of a three-element vector.
     #[inline]
+    #[must_use]
     pub fn vec3_len_sq(self) -> f32 {
         self.vec3_dot_into(self)
     }
 
     /// Length of a three-element vector.
     #[inline]
+    #[must_use]
     pub fn vec3_len(self) -> f32 {
         self.vec3_len_sq().sqrt()
     }
 
     /// Length squared of a four-element vector.
     #[inline]
+    #[must_use]
     pub fn vec4_len_sq(self) -> f32 {
         self.vec4_dot_into(self)
     }
 
     /// Length of a four-element vector.
     #[inline]
+    #[must_use]
     pub fn vec4_len(self) -> f32 {
         self.vec4_len_sq().sqrt()
     }
 
     /// Returns `true` if it is a unit vector.
     #[inline]
+    #[must_use]
     pub fn is_vec2_normalized(self) -> bool {
         (self.vec2_len() - 1.0).abs() <= f32::EPSILON
     }
@@ -535,6 +556,7 @@ impl Vector {
 
     /// Returns `true` if it is a unit vector.
     #[inline]
+    #[must_use]
     pub fn is_vec3_normalized(self) -> bool {
         (self.vec3_len() - 1.0).abs() <= f32::EPSILON
     }

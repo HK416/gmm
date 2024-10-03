@@ -162,7 +162,8 @@ impl Quaternion {
     /// If `use-assertion` is enabled
     /// and the given axis is not a unit vector, it will call [`panic!`].
     /// 
-    fn from_rotation_axes(x_axis: Vector, y_axis: Vector, z_axis: Vector) -> Self {
+    #[must_use]
+    pub fn from_rotation_axes(x_axis: Vector, y_axis: Vector, z_axis: Vector) -> Self {
         #[cfg(feature = "use-assertion")] {
             let validate = x_axis.is_vec3_normalized() 
             & y_axis.is_vec3_normalized();
@@ -232,6 +233,7 @@ impl Quaternion {
     /// If `use-assertion` is enabled
     /// and the given quaternion is not a normalized quaternion, it will call [`panic!`].
     /// 
+    #[must_use]
     pub fn to_rotation_axes(self) -> (Vector, Vector, Vector) {
         #[cfg(feature = "use-assertion")]
         assert!(self.is_normalize(), "The quaternion must be normalized!");
@@ -255,6 +257,20 @@ impl Quaternion {
         let z_axis = Float4 { x: xz + wy, y: yz - wx, z: 1.0 - (xx + yy), w: 0.0 }.into();
         
         (x_axis, y_axis, z_axis)
+    }
+
+    /// Creates a quaternion from a given vector.
+    #[inline]
+    #[must_use]
+    pub fn from_vector(v: Vector) -> Self {
+        Self { inner: unsafe { v.inner } }
+    }
+
+    /// Converts quaternions to vectors.
+    #[inline]
+    #[must_use]
+    pub fn into_vector(self) -> Vector {
+        Vector { inner: unsafe { self.inner } }
     }
 
     /// Creates from a given matrix.
@@ -305,6 +321,7 @@ impl Quaternion {
     /// 
     /// Returns `None` if the quaternion is not a normalized quaternion.
     /// 
+    #[must_use]
     pub fn try_into_matrix(self) -> Option<Matrix> {
         if !self.is_normalized() {
             return None;
@@ -532,6 +549,18 @@ impl Quaternion {
     #[must_use]
     pub fn try_inverse(self) -> Option<Self> {
         self.try_normalize().map(|q| q.conjugate())
+    }
+
+    /// Returns a vector rotated by a quaternion.
+    /// 
+    /// # Panics
+    /// When `use-assertion` feature is enabled, [`panic!`] will be called 
+    /// if the quaternion is not normalized.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn transform_vector(self, v: Vector) -> Vector {
+        (self * v.into_quaternion() * self.inverse()).into_vector()
     }
 
     /// Returns a quaternion that is a linear interpolation of two quaternion.

@@ -3,6 +3,8 @@ use core::ops;
 use core::arch::aarch64::*;
 use crate::{ VectorInt, Float2, Float3, Float4 };
 
+use super::Quaternion;
+
 
 
 /// This is a vector data type that uses the `SIMD` instruction.
@@ -117,6 +119,20 @@ impl Vector {
         #[cfg(feature = "use-assertion")]
         assert!(slice.len() >= 4, "The given array slice has less than four elements!");
         unsafe { Self { inner: vld1q_f32(slice.as_ptr()) } }
+    }
+
+    /// Converts a given quaternion to a vector.
+    #[inline]
+    #[must_use]
+    pub fn from_quaternion(q: Quaternion) -> Self {
+        Self { inner: unsafe { q.inner } }
+    }
+
+    /// Converts a vector to a quaternion.
+    #[inline]
+    #[must_use]
+    pub fn into_quaternion(self) -> Quaternion {
+        Quaternion { inner: unsafe { self.inner } }
     }
 
     /// Loads a value from a given `Float2`.

@@ -253,6 +253,20 @@ impl Quaternion {
         (x_axis, y_axis, z_axis)
     }
 
+    /// Creates a quaternion from a given vector.
+    #[inline]
+    #[must_use]
+    pub fn from_vector(v: Vector) -> Self {
+        Self { inner: unsafe { v.inner } }
+    }
+
+    /// Converts quaternions to vectors.
+    #[inline]
+    #[must_use]
+    pub fn into_vector(self) -> Vector {
+        Vector { inner: unsafe { self.inner } }
+    }
+
     /// Creates from a given matrix.
     /// 
     /// # Panics
@@ -485,6 +499,18 @@ impl Quaternion {
     #[must_use]
     pub fn try_inverse(self) -> Option<Self> {
         self.try_normalize().map(|q| q.conjugate())
+    }
+
+    /// Returns a vector rotated by a quaternion.
+    /// 
+    /// # Panics
+    /// When `use-assertion` feature is enabled, [`panic!`] will be called 
+    /// if the quaternion is not normalized.
+    /// 
+    #[inline]
+    #[must_use]
+    pub fn transform_vector(self, v: Vector) -> Vector {
+        (self * v.into_quaternion() * self.inverse()).into_vector()
     }
 
     /// Returns a quaternion that is a linear interpolation of two quaternion.
